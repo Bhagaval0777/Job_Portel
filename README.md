@@ -20,11 +20,11 @@ git pull origin main
 2) Create and activate a virtual environment
 
 ```powershell
-# Create a venv named .venv
-python -m venv .venv
+# Create a venv named venv
+python -m venv venv
 
 # Activate the venv (PowerShell)
-.\.venv\Scripts\Activate.ps1
+.\venv\Scripts\Activate.ps1
 ```
 
 3) Install dependencies
