@@ -24,7 +24,7 @@ git pull origin main
 python -m venv venv
 
 # Activate the venv (PowerShell)
-.\venv\Scripts\Activate.ps1
+venv\Scripts\Activate.ps1
 ```
 
 3) Install dependencies
