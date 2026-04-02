@@ -4,98 +4,63 @@
 <div class="max-w-7xl mx-auto" x-data="{ 
     locations: {{ profile.preferred_location|default:'[]'|safe }}, 
     newLoc: '',
-    skills: ['Python', 'Django', 'SQL'],
+    skills: ['Python', 'Django', 'SQL'], 
     newSkill: ''
 }">
-    <h1 class="text-3xl font-black mb-8 uppercase tracking-tight">My Profile Dashboard</h1>
+    <h1 class="text-3xl font-bold mb-8">MY PROFILE DASHBOARD</h1>
 
-    <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-6">
         {% csrf_token %}
 
         <div class="card-style space-y-6">
             <h3 class="font-bold text-lg">Personal Information</h3>
             
-            <div class="flex items-center gap-5 p-4 bg-slate-900/40 rounded-2xl border border-slate-700/50">
-                <div class="w-20 h-20 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center">
+            <div class="flex items-center gap-4 p-4 bg-slate-900/50 rounded-2xl border border-slate-700">
+                <div class="w-20 h-20 bg-slate-800 rounded-xl overflow-hidden border border-slate-600 flex items-center justify-center">
                     {% if profile.profile_pic %}
                         <img src="{{ profile.profile_pic.url }}" class="w-full h-full object-cover">
                     {% else %}
                         <span class="text-slate-500 text-[10px] font-bold">NO PHOTO</span>
                     {% endif %}
                 </div>
-                <div>
-                    <label class="cursor-pointer">
-                        <span class="text-xs font-bold text-blue-500 hover:text-blue-400 uppercase tracking-widest">↑ Upload Photo</span>
-                        <input type="file" name="profile_pic" class="hidden">
-                    </label>
-                    <p class="text-[9px] text-slate-500 mt-1 uppercase">PNG, JPG up to 2MB</p>
-                </div>
+                <label class="cursor-pointer">
+                    <span class="text-xs font-bold text-blue-500 hover:underline uppercase">Upload Photo</span>
+                    <input type="file" name="profile_pic" class="hidden">
+                </label>
             </div>
 
             <div class="space-y-4">
-                <div>
-                    <label class="label-style">First Name</label>
-                    <input type="text" name="firstname" value="{{ profile.firstname|default:'Michael' }}" class="input-style">
-                </div>
-                <div>
-                    <label class="label-style">Last Name</label>
-                    <input type="text" name="lastname" value="{{ profile.lastname|default:'Chen' }}" class="input-style">
-                </div>
-                <div>
-                    <label class="label-style">Phone</label>
-                    <input type="text" name="phonenuber" value="{{ profile.phonenuber|default:'+1 555-0199' }}" class="input-style">
-                </div>
+                <div><label class="label-style">First Name</label><input type="text" name="firstname" value="Michael" class="input-style"></div>
+                <div><label class="label-style">Last Name</label><input type="text" name="lastname" value="Chen" class="input-style"></div>
             </div>
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg shadow-blue-900/20 transition-all">SAVE CHANGES</button>
+            <button class="w-full bg-blue-600 py-3 rounded-xl font-bold">Save Changes</button>
         </div>
 
-        <div class="space-y-8">
-            <div class="card-style">
-                <h3 class="font-bold mb-4">Preferred Locations</h3>
-                <div class="flex flex-wrap gap-2 mb-4">
-                    <template x-for="(loc, i) in locations" :key="i">
-                        <span class="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-xl text-xs font-bold border border-blue-500/20 flex items-center">
-                            <span x-text="loc"></span>
-                            <button @click="locations.splice(i, 1)" type="button" class="ml-2 font-bold hover:text-white">✕</button>
-                        </span>
-                    </template>
-                </div>
-                <input type="text" x-model="newLoc" @keydown.enter.prevent="if(newLoc.trim()) { locations.push(newLoc); newLoc = '' }" placeholder="Add Location + Enter" class="input-style">
+        <div class="card-style">
+            <h3 class="font-bold mb-4">Preferred Locations</h3>
+            <div class="flex flex-wrap gap-2 mb-4">
+                <template x-for="(loc, i) in locations" :key="i">
+                    <span class="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-lg text-xs border border-blue-600/30 flex items-center">
+                        <span x-text="loc"></span>
+                        <button @click="locations.splice(i, 1)" type="button" class="ml-2 hover:text-white">✕</button>
+                    </span>
+                </template>
             </div>
-
-            <div class="card-style">
-                <h3 class="font-bold mb-4">Education</h3>
-                <div class="p-4 bg-slate-900/40 rounded-2xl border border-slate-700/50 mb-4">
-                    <p class="font-bold text-sm">M.S. Computer Science</p>
-                    <p class="text-slate-400 text-xs">Stanford University</p>
-                </div>
-                <button type="button" class="w-full py-3 bg-blue-600 rounded-xl text-xs font-bold">+ ADD EDUCATION</button>
-            </div>
+            <input type="text" x-model="newLoc" @keydown.enter.prevent="if(newLoc.trim()) { locations.push(newLoc); newLoc = '' }" placeholder="Add Location" class="input-style">
         </div>
 
-        <div class="space-y-8">
-            <div class="card-style">
-                <h3 class="font-bold mb-4">Skills</h3>
-                <div class="flex flex-wrap gap-2 mb-4">
-                    <template x-for="s in skills">
-                        <span class="bg-slate-700 text-slate-300 px-3 py-1 rounded-xl text-xs border border-slate-600" x-text="s"></span>
-                    </template>
-                </div>
-                <input type="text" x-model="newSkill" @keydown.enter.prevent="if(newSkill.trim()) { skills.push(newSkill); newSkill = '' }" placeholder="Add Skill" class="input-style">
+        <div class="card-style">
+            <h3 class="font-bold mb-4">Skills</h3>
+            <div class="flex flex-wrap gap-2 mb-4">
+                <template x-for="(s, i) in skills" :key="i">
+                    <span class="bg-slate-700 text-slate-300 px-3 py-1 rounded-lg text-xs border border-slate-600 flex items-center">
+                        <span x-text="s"></span>
+                        <button @click="skills.splice(i, 1)" type="button" class="ml-2 hover:text-red-400 text-[10px]">✕</button>
+                    </span>
+                </template>
             </div>
-
-            <div class="card-style">
-                <h3 class="font-bold mb-4">Work Experience</h3>
-                <div class="p-4 bg-slate-900/40 rounded-2xl border border-slate-700/50 mb-4">
-                    <p class="font-bold text-sm">Software Engineer</p>
-                    <p class="text-blue-500 text-xs font-bold">Innovations Inc.</p>
-                </div>
-                <div class="flex gap-2">
-                    <button type="button" class="flex-1 py-3 bg-blue-600 rounded-xl text-[10px] font-bold">+ EXPERIENCE</button>
-                    <button type="button" class="flex-1 py-3 border border-blue-600 text-blue-500 rounded-xl text-[10px] font-bold">✨ SUMMARY</button>
-                </div>
-            </div>
+            <input type="text" x-model="newSkill" @keydown.enter.prevent="if(newSkill.trim()) { skills.push(newSkill); newSkill = '' }" placeholder="Add Skill" class="input-style">
         </div>
     </form>
 </div>
-{% endblock %}  
+{% endblock %}
