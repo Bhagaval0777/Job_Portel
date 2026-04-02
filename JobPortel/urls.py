@@ -16,8 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from jobseeker import views
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('users/', include('Users.urls')),
+    # path('users/', include('Users.urls')),
+    path('profile/', views.profile_view, name='profile_view'),
+    path('jobseeker/', include('jobseeker.urls')),
 ]
