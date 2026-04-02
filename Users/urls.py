@@ -1,5 +1,7 @@
-from django.urls import path, include
+from django.urls import path
+from Users import views
 
 urlpatterns = [
-    #path('register/', include('')),
+    path('register/', views.UserRegistration.as_view(), name='register'),
+    path('verify-email-otp/', views.VerifyEmailOTP.as_view(), name='verify_email_otp')
 ]
