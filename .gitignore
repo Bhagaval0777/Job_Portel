@@ -1,3 +1,7 @@
 venv
 db.sqlite3
 __pycache__/
+logs
+old.py
+steps for code running.txt
+.gitignore

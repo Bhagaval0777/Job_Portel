@@ -1,4 +1,4 @@
-from JobPortel.celery import shared_task
+from celery import shared_task
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from Users.models import Users
@@ -7,11 +7,17 @@ from django.conf import settings
 from Users.serializers import *
 import logging
 from django.http import JsonResponse
+import secrets
 
 logger = logging.getLogger('app_logger')
 
 from django.core.cache import cache
 import random
+from django.shortcuts import render
+
+def register_page(request):
+    return render(request, "register.html")
+
 
 OTP_LIMIT = 5          # max OTP per window
 OTP_WINDOW = 300       # 5 minutes
@@ -28,7 +34,7 @@ def generate_otp(email):
 
     otp = str(random.randint(100000, 999999))
 
-    cache.set(otp_key, otp, timeout=300)
+    cache.set(otp_key, otp, timeout=OTP_EXPIRY)
     cache.set(limit_key, count + 1, timeout=OTP_WINDOW)
 
     return otp
@@ -96,6 +102,9 @@ class UserRegistration(APIView):
                     "error": "Too many OTP requests. Try again after 5 minutes."
                 }, status=429)
 
+            verify_token = secrets.token_urlsafe(32)
+
+            cache.set(f"verify_token:{verify_token}", email, timeout=OTP_EXPIRY)
             cache.set(f"register:{email}", data, timeout=OTP_EXPIRY)
 
             send_otp_email_task.delay(email, otp)
@@ -103,7 +112,8 @@ class UserRegistration(APIView):
             logger.info(f"OTP generated -> {email}")
 
             return JsonResponse({
-                "message": "OTP sent to email"
+                "message": "OTP sent to email",
+                "verify_token": verify_token
             }, status=200)
 
         except Exception as e:
@@ -115,12 +125,19 @@ class VerifyEmailOTP(APIView):
 
     def post(self, request):
         try:
-            email = request.data.get("user_email")
             otp = request.data.get("otp")
+            token = request.data.get("verify_token")
 
-            if not email or not otp:
-                return JsonResponse({"error": "Email & OTP required"}, status=400)
+            if not otp or not token:
+                logger.warning("OTP or token missing in verification")
+                return JsonResponse({"error": "OTP and token required"}, status=400)
 
+            email = cache.get(f"verify_token:{token}")
+
+            if not email:
+                logger.warning(f"Invalid or expired token | Token: {token}")
+                return JsonResponse({"error": "Invalid or expired token"}, status=400)
+            
             stored_otp = cache.get(f"otp:{email}")
 
             if not stored_otp:
@@ -145,7 +162,9 @@ class VerifyEmailOTP(APIView):
 
             cache.delete(f"otp:{email}")
             cache.delete(f"register:{email}")
-
+            cache.delete(f"verify_token:{token}")
+            
+            logger.info(f"User registered successfully | Email: {email}")
             return JsonResponse({"message": "Registration successful"})
 
         except Exception:
