@@ -1,11 +1,6 @@
 from django.contrib import admin
-from .models import Profile, LoginLog
+from .models import LoginLog
 
-
-@admin.register(Profile)
-class ProfileAdmin(admin.ModelAdmin):
-	list_display = ('user', 'location', 'phone')
-	search_fields = ('user__username', 'user__email', 'phone', 'location')
 
 @admin.register(LoginLog)
 class LoginLogAdmin(admin.ModelAdmin):
