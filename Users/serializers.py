@@ -23,28 +23,6 @@ class LoginSerializer(serializers.Serializer):
         data["user"] = user
         return data
  
-
-class RegisterSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
-    password2 = serializers.CharField(write_only=True)
-
-    def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A user with that email already exists.")
-        return value
-
-    def validate(self, data):
-        if data.get('password') != data.get('password2'):
-            raise serializers.ValidationError("Passwords must match.")
-        return data
-
-    def create(self, validated_data):
-        email = validated_data['email']
-        password = validated_data['password']
-        # Use email as username to allow email-based login if desired
-        user = User.objects.create_user(username=email, email=email, password=password)
-        return user
     
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

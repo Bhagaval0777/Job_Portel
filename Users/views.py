@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .serializers import RegisterSerializer, UserSerializer
+from .serializers import UserSerializer
 from rest_framework.permissions import IsAuthenticated , AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import get_client_ip
@@ -112,38 +112,6 @@ class CookieTokenRefreshView(TokenRefreshView):
                 del response.data['access']
                 
         return response     
-# {
-#   "email": "alice@example.com",
-#   "password": "Passw0rd!",
-#   "password2": "Passw0rd!"
-# }
-
-# {
-#   "email": "alice@example.com",
-#   "password": "Passw0rd!"
-# }
-class RegisterView(APIView):
-    """Render registration form (GET) and create user (POST).
-
-    On success sets JWT cookies (same behavior as LoginView) and redirects for browsers.
-    """
-
-    def get(self, request):
-        # API-only: return a small JSON hint rather than rendering HTML
-        return Response({"detail": "Send a POST request with email, password and password2 to register."}, status=status.HTTP_200_OK)
-
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            return Response({
-                'message': 'Registration successful. Please log in.',
-                'user': user.username
-            }, status=status.HTTP_201_CREATED)
-
-        # Always return JSON errors for API clients
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class LogoutView(APIView):
     # This is the key: disable authentication for this view
