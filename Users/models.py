@@ -16,6 +16,8 @@ class UserManager(BaseUserManager):
     def create_superuser(self, user_email, password=None, **extra_fields):
         extra_fields.setdefault('is_active', True)
         extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('role', 'admin')
 
         return self.create_user(user_email, password, **extra_fields)
 
@@ -23,6 +25,7 @@ class Users(AbstractBaseUser,PermissionsMixin):
     ROLE_CHOICES = (
         ('jobseeker', 'JobSeeker'),
         ('recruiter', 'Recruiter'),
+        ('admin', 'Admin'),
     )
 
     user_id = models.AutoField(primary_key=True)
@@ -44,13 +47,3 @@ class Users(AbstractBaseUser,PermissionsMixin):
 
     class Meta:
         db_table = "users"
-
-class UserLoginDetails(models.Model):
-    login_id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(Users, on_delete=models.CASCADE)
-    login_time = models.DateTimeField(auto_now_add=True)
-    logout_time = models.DateTimeField(null=True, blank=True)
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-
-    class Meta:
-        db_table = "user_login_details"

@@ -5,15 +5,14 @@ from Users.models import Users
 from django.core.mail import send_mail
 from django.conf import settings
 from Users.serializers import *
-import logging
 from django.http import JsonResponse
+from django.core.cache import cache
+from django.shortcuts import render
+import logging
+import random
 import secrets
 
 logger = logging.getLogger('app_logger')
-
-from django.core.cache import cache
-import random
-from django.shortcuts import render
 
 def register_page(request):
     return render(request, "register.html")

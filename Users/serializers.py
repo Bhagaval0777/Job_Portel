@@ -18,11 +18,3 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         validated_data.pop("confirm_password")
 
         return Users.objects.create_user(**validated_data)
-
-class ChangePasswordSerializer(serializers.Serializer):
-    new_password = serializers.CharField(write_only=True)
-    confirm_password = serializers.CharField(write_only=True)
-
-    def validate(self, data):
-        validate_password(data["new_password"])
-        return data
