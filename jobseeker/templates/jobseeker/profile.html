@@ -7,69 +7,79 @@
     <form id="profileForm" class="grid grid-cols-1 md:grid-cols-3 gap-6">
         {% csrf_token %}
 
-        <!-- ================= PERSONAL INFO ================= -->
+        <!-- PERSONAL INFO -->
         <div class="card-style space-y-6">
             <h3 class="font-bold text-lg">Personal Information</h3>
-            
-            <!-- Profile Image -->
+
+            <!-- PROFILE IMAGE DISPLAY ONLY -->
             <div class="flex items-center gap-4 p-4 bg-slate-900/50 rounded-2xl border border-slate-700">
                 <div class="w-20 h-20 bg-slate-800 rounded-xl overflow-hidden border border-slate-600 flex items-center justify-center">
-                    {% if profile.profile_image %}
-                        <img src="{{ profile.profile_image.url }}" class="w-full h-full object-cover">
+                    {% if profile.profile_pic %}
+                        <img src="{{ profile.profile_pic.url }}" class="w-full h-full object-cover">
                     {% else %}
                         <span class="text-slate-500 text-[10px] font-bold">NO PHOTO</span>
                     {% endif %}
                 </div>
-
-                <input type="file" id="profileImageInput" class="text-xs">
             </div>
 
-            <!-- Inputs -->
             <div class="space-y-4">
                 <div>
                     <label class="label-style">First Name</label>
-                    <input type="text" name="firstname" class="input-style">
+                    <input type="text" name="firstname" value="{{ profile.firstname }}" class="input-style">
                 </div>
 
                 <div>
                     <label class="label-style">Last Name</label>
-                    <input type="text" name="lastname" class="input-style">
+                    <input type="text" name="lastname" value="{{ profile.lastname }}" class="input-style">
                 </div>
 
+                <!-- PHONE -->
                 <div>
                     <label class="label-style">Phone Number</label>
-                    <input type="text" name="phone" class="input-style" placeholder="Enter 10 digit number">
+                    <input type="text" name="phone" value="{{ profile.phone }}" class="input-style">
+                    <p id="phoneError" class="text-red-500 text-xs"></p>
+                </div>
+
+                <!-- GENDER -->
+                <div>
+                    <label class="label-style">Gender</label>
+                    <div class="flex gap-4 mt-2">
+                        <label><input type="radio" name="gender" value="male"> Male</label>
+                        <label><input type="radio" name="gender" value="female"> Female</label>
+                        <label><input type="radio" name="gender" value="other"> Other</label>
+                    </div>
+                    <p id="genderError" class="text-red-500 text-xs"></p>
                 </div>
             </div>
 
-            <!-- Save Button -->
+            <!-- BUTTON -->
             <div class="flex justify-end">
-                <button type="submit" class="bg-blue-600 px-4 py-2 rounded-lg font-semibold text-sm">
+                <button class="bg-blue-600 px-4 py-2 rounded-lg text-sm font-semibold">
                     Save Changes
                 </button>
             </div>
         </div>
 
-        <!-- ================= LOCATIONS ================= -->
+        <!-- LOCATIONS -->
         <div class="card-style">
             <h3 class="font-bold mb-4">Preferred Locations</h3>
 
             <div id="locations-container"></div>
 
             <div class="flex gap-2 mt-3">
-                <input type="text" id="locationInput" placeholder="Add Location" class="input-style">
+                <input type="text" id="locationInput" class="input-style" placeholder="Add Location">
                 <button type="button" onclick="addLocation()" class="bg-blue-600 px-3 rounded">Add</button>
             </div>
         </div>
 
-        <!-- ================= SKILLS ================= -->
+        <!-- SKILLS -->
         <div class="card-style">
             <h3 class="font-bold mb-4">Skills</h3>
 
             <div id="skills-container"></div>
 
             <div class="flex gap-2 mt-3">
-                <input type="text" id="skillInput" placeholder="Add Skill" class="input-style">
+                <input type="text" id="skillInput" class="input-style" placeholder="Add Skill">
                 <button type="button" onclick="addSkill()" class="bg-blue-600 px-3 rounded">Add</button>
             </div>
         </div>
@@ -77,10 +87,8 @@
     </form>
 </div>
 
-<!-- ================= JAVASCRIPT ================= -->
 <script>
-
-// ---------- ADD LOCATION ----------
+// ADD LOCATION
 function addLocation(value = "") {
     let input = document.getElementById("locationInput");
     let val = value || input.value.trim();
@@ -100,7 +108,7 @@ function addLocation(value = "") {
     input.value = "";
 }
 
-// ---------- ADD SKILL ----------
+// ADD SKILL
 function addSkill(value = "") {
     let input = document.getElementById("skillInput");
     let val = value || input.value.trim();
@@ -120,104 +128,80 @@ function addSkill(value = "") {
     input.value = "";
 }
 
-// ---------- IMAGE UPLOAD ----------
-document.getElementById("profileImageInput").addEventListener("change", async function() {
-    let file = this.files[0];
-    if (!file) return;
-
-    let formData = new FormData();
-    formData.append("profile_image", file);
-
-    let res = await fetch("/jobseeker/profile/upload-image/", {
-        method: "POST",
-        headers: {
-            "X-CSRFToken": getCSRFToken()
-        },
-        body: formData
-    });
-
-    let data = await res.json();
-
-    if (res.ok) {
-        alert("Image uploaded ✅");
-        location.reload();
-    } else {
-        alert("Error: " + JSON.stringify(data));
-    }
-});
-
-// ---------- PROFILE UPDATE ----------
-document.getElementById("profileForm").addEventListener("submit", async function(e) {
+// FORM SUBMIT
+document.getElementById("profileForm").addEventListener("submit", function(e) {
     e.preventDefault();
 
     let firstname = document.querySelector('input[name="firstname"]').value;
     let lastname = document.querySelector('input[name="lastname"]').value;
     let phone = document.querySelector('input[name="phone"]').value;
+    let gender = document.querySelector('input[name="gender"]:checked');
+
+    let isValid = true;
+
+    // PHONE VALIDATION
+    if (!/^\d{10}$/.test(phone)) {
+        document.getElementById("phoneError").innerText = "Enter valid 10-digit number";
+        isValid = false;
+    } else {
+        document.getElementById("phoneError").innerText = "";
+    }
+
+    // GENDER VALIDATION
+    if (!gender) {
+        document.getElementById("genderError").innerText = "Select gender";
+        isValid = false;
+    } else {
+        document.getElementById("genderError").innerText = "";
+    }
+
+    if (!isValid) return;
 
     let skills = [];
-    document.querySelectorAll('input[name="skills[]"]').forEach(i => {
-        if (i.value.trim()) {
-            skills.push({ skill_name: i.value.trim() });
+    document.querySelectorAll('input[name="skills[]"]').forEach(input => {
+        if (input.value.trim()) {
+            skills.push({ skill_name: input.value.trim() });
         }
     });
 
     let locations = [];
-    document.querySelectorAll('input[name="locations[]"]').forEach(i => {
-        if (i.value.trim()) {
-            locations.push({ location_name: i.value.trim() });
+    document.querySelectorAll('input[name="locations[]"]').forEach(input => {
+        if (input.value.trim()) {
+            locations.push({ location_name: input.value.trim() });
         }
     });
 
-    let payload = {
+    let data = {
         full_name: firstname + " " + lastname,
         phone_number: phone,
+        gender: gender.value,
         skills: skills,
         locations: locations
     };
 
-    let res = await fetch("/jobseeker/profile/", {
+    fetch("/jobseeker/profile/", {
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken": getCSRFToken()
+            "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(response => {
+        console.log(response);
+
+        if (response.message) {
+            alert("Profile updated successfully ✅");
+        } else {
+            alert("Error: " + JSON.stringify(response));
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Something went wrong ❌");
     });
-
-    let data = await res.json();
-
-    if (res.ok) {
-        alert("Profile updated successfully ✅");
-    } else {
-        alert("Error: " + JSON.stringify(data));
-    }
 });
-
-// ---------- LOAD EXISTING DATA ----------
-window.onload = async function () {
-    let res = await fetch("/jobseeker/profile/");
-    if (!res.ok) return;
-
-    let data = await res.json();
-
-    // Split full name
-    if (data.full_name) {
-        let parts = data.full_name.split(" ");
-        document.querySelector('[name="firstname"]').value = parts[0] || "";
-        document.querySelector('[name="lastname"]').value = parts.slice(1).join(" ") || "";
-    }
-
-    document.querySelector('[name="phone"]').value = data.phone_number || "";
-
-    data.skills?.forEach(s => addSkill(s.skill_name));
-    data.locations?.forEach(l => addLocation(l.location_name));
-};
-
-// ---------- CSRF ----------
-function getCSRFToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]').value;
-}
-
 </script>
 
 {% endblock %}
