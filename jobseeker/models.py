@@ -16,9 +16,9 @@ class JobSeekerProfile(models.Model):
     full_name=models.CharField(max_length=200)
     headline=models.CharField(max_length=255,blank=True)
     bio=models.TextField(blank=True)
-    gender=models.CharField(max_length=20,choices=GENDER_CHOICES)
+    gender=models.CharField(max_length=20,choices=GENDER_CHOICES,blank=False)
     phone_number=models.CharField(max_length=15,validators=[phone_validator],blank=True)
-    profile_image = models.ImageField(upload_to='profiles/', null=True, blank=True)
+    # profile_image = models.ImageField(upload_to='profiles/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
 

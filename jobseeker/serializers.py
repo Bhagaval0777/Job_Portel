@@ -103,25 +103,25 @@ class JobSeekerProfileSerializer(serializers.ModelSerializer):
         instance.save()
 
         # Replace Skills
-        if skills_data:
+        if skills_data is not None:
             instance.skills.all().delete()
             for skill in skills_data:
                 Skill.objects.create(profile=instance, **skill)
 
         # Replace Education
-        if educations_data:
+        if educations_data is not None:
             instance.educations.all().delete()
             for edu in educations_data:
                 Education.objects.create(profile=instance, **edu)
 
         # Replace Experience
-        if experiences_data:
+        if experiences_data is not None:
             instance.experiences.all().delete()
             for exp in experiences_data:
                 Experience.objects.create(profile=instance, **exp)
 
         # Replace Locations
-        if locations_data:
+        if locations_data is not None:
             instance.locations.all().delete()
             for loc in locations_data:
                 PreferredLocation.objects.create(profile=instance, **loc)
