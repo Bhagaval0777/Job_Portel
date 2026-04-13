@@ -1,38 +1,38 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{% block title %}JobPlex{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        body { background-color: #0f172a; color: white; font-family: sans-serif; }
-        .card-style { background-color: #1e293b; border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #334155; }
-        
-        /* FORCING TEXT VISIBILITY: Dark background with Pure White Text */
-        .input-style { 
-            width: 100%; 
-            padding: 12px; 
-            border-radius: 12px; 
-            background-color: #0f172a !important; 
-            color: #ffffff !important; 
-            border: 1px solid #475569;
-            outline: none;
-        }
-        .input-style::placeholder { color: #64748b; }
-        .label-style { font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; display: block; }
-    </style>
-</head>
-<body>
-    <header class="p-4 border-b border-slate-800 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-            <div class="bg-blue-600 w-8 h-8 rounded text-center font-bold">J</div>
-            <span class="font-bold uppercase tracking-tight">JobPlex</span>
-        </div>
-    </header>
-    <main class="p-8">
-        {% block content %}{% endblock %}
-    </main>
-</body>
-</html>
+    {% load static %}
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}JobPlex{% endblock %}</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <style>
+            body { background-color: #0f172a; color: white; font-family: sans-serif; }
+            .card-style { background-color: #1e293b; border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #334155; }
+            
+            /* FORCING TEXT VISIBILITY: Dark background with Pure White Text */
+            .input-style { 
+                width: 100%; 
+                padding: 12px; 
+                border-radius: 12px; 
+                background-color: #0f172a !important; 
+                color: #ffffff !important; 
+                border: 1px solid #475569;
+                outline: none;
+            }
+            .input-style::placeholder { color: #64748b; }
+            .label-style { font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; display: block; }
+        </style>
+    </head>
+    <body>
+        <header class="p-4 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-blue-600 w-8 h-8 rounded text-center font-bold">J</div>
+                <span class="font-bold uppercase tracking-tight">JobPlex</span>
+            </div>
+        </header>
+        <main class="p-8">
+            {% block content %}{% endblock %}
+        </main>
+    </body>
+    </html>

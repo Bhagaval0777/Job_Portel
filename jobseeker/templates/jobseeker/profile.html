@@ -1,66 +1,129 @@
 {% extends "jobseeker/base.html" %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto" x-data="{ 
-    locations: {{ profile.preferred_location|default:'[]'|safe }}, 
-    newLoc: '',
-    skills: ['Python', 'Django', 'SQL'], 
-    newSkill: ''
-}">
+<div class="max-w-7xl mx-auto">
     <h1 class="text-3xl font-bold mb-8">MY PROFILE DASHBOARD</h1>
 
     <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-6">
         {% csrf_token %}
 
-        <div class="card-style space-y-6">
-            <h3 class="font-bold text-lg">Personal Information</h3>
-            
-            <div class="flex items-center gap-4 p-4 bg-slate-900/50 rounded-2xl border border-slate-700">
-                <div class="w-20 h-20 bg-slate-800 rounded-xl overflow-hidden border border-slate-600 flex items-center justify-center">
-                    {% if profile.profile_pic %}
-                        <img src="{{ profile.profile_pic.url }}" class="w-full h-full object-cover">
-                    {% else %}
-                        <span class="text-slate-500 text-[10px] font-bold">NO PHOTO</span>
-                    {% endif %}
-                </div>
-                <label class="cursor-pointer">
-                    <span class="text-xs font-bold text-blue-500 hover:underline uppercase">Upload Photo</span>
-                    <input type="file" name="profile_pic" class="hidden">
-                </label>
-            </div>
-
-            <div class="space-y-4">
-                <div><label class="label-style">First Name</label><input type="text" name="firstname" value="Michael" class="input-style"></div>
-                <div><label class="label-style">Last Name</label><input type="text" name="lastname" value="Chen" class="input-style"></div>
-            </div>
-            <button class="w-full bg-blue-600 py-3 rounded-xl font-bold">Save Changes</button>
+       <!-- PERSONAL INFO -->
+<div class="card-style space-y-6">
+    <h3 class="font-bold text-lg">Personal Information</h3>
+    
+    <div class="flex items-center gap-4 p-4 bg-slate-900/50 rounded-2xl border border-slate-700">
+        <div class="w-20 h-20 bg-slate-800 rounded-xl overflow-hidden border border-slate-600 flex items-center justify-center">
+            {% if profile.profile_pic %}
+                <img src="{{ profile.profile_pic.url }}" class="w-full h-full object-cover">
+            {% else %}
+                <span class="text-slate-500 text-[10px] font-bold">NO PHOTO</span>
+            {% endif %}
         </div>
 
+        <input type="file" name="profile_pic" class="text-xs">
+    </div>
+
+    <div class="space-y-4">
+        <div>
+            <label class="label-style">First Name</label>
+            <input type="text" name="firstname" value="{{ profile.firstname }}" class="input-style">
+        </div>
+
+        <div>
+            <label class="label-style">Last Name</label>
+            <input type="text" name="lastname" value="{{ profile.lastname }}" class="input-style">
+        </div>
+
+       
+        <div>
+            <label class="label-style">Phone Number</label>
+            <input type="text" name="phone" value="{{ profile.phone }}" class="input-style">
+        </div>
+    </div>
+
+    <div class="flex justify-end">
+        <button class="bg-blue-600 px-4 py-2 rounded-lg font-semibold text-sm">
+            Save Changes
+        </button>
+    </div>
+</div>
+
+        <!-- LOCATIONS -->
         <div class="card-style">
             <h3 class="font-bold mb-4">Preferred Locations</h3>
-            <div class="flex flex-wrap gap-2 mb-4">
-                <template x-for="(loc, i) in locations" :key="i">
-                    <span class="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-lg text-xs border border-blue-600/30 flex items-center">
-                        <span x-text="loc"></span>
-                        <button @click="locations.splice(i, 1)" type="button" class="ml-2 hover:text-white">✕</button>
-                    </span>
-                </template>
+
+            <div id="locations-container"></div>
+
+            <div class="flex gap-2 mt-3">
+                <input type="text" id="locationInput" placeholder="Add Location" class="input-style">
+                <button type="button" onclick="addLocation()" class="bg-blue-600 px-3 rounded">Add</button>
             </div>
-            <input type="text" x-model="newLoc" @keydown.enter.prevent="if(newLoc.trim()) { locations.push(newLoc); newLoc = '' }" placeholder="Add Location" class="input-style">
         </div>
 
+        <!-- SKILLS -->
         <div class="card-style">
             <h3 class="font-bold mb-4">Skills</h3>
-            <div class="flex flex-wrap gap-2 mb-4">
-                <template x-for="(s, i) in skills" :key="i">
-                    <span class="bg-slate-700 text-slate-300 px-3 py-1 rounded-lg text-xs border border-slate-600 flex items-center">
-                        <span x-text="s"></span>
-                        <button @click="skills.splice(i, 1)" type="button" class="ml-2 hover:text-red-400 text-[10px]">✕</button>
-                    </span>
-                </template>
+
+            <div id="skills-container"></div>
+
+            <div class="flex gap-2 mt-3">
+                <input type="text" id="skillInput" placeholder="Add Skill" class="input-style">
+                <button type="button" onclick="addSkill()" class="bg-blue-600 px-3 rounded">Add</button>
             </div>
-            <input type="text" x-model="newSkill" @keydown.enter.prevent="if(newSkill.trim()) { skills.push(newSkill); newSkill = '' }" placeholder="Add Skill" class="input-style">
         </div>
+
     </form>
 </div>
+
+<script>
+// ---------- ADD LOCATION ----------
+function addLocation(value = "") {
+    let input = document.getElementById("locationInput");
+    let val = value || input.value.trim();
+    if (!val) return;
+
+    let container = document.getElementById("locations-container");
+
+    let div = document.createElement("div");
+    div.className = "flex gap-2 mt-2";
+
+    div.innerHTML = `
+        <input type="text" name="locations[]" value="${val}" class="input-style">
+        <button type="button" onclick="this.parentElement.remove()">❌</button>
+    `;
+
+    container.appendChild(div);
+    input.value = "";
+}
+
+// ---------- ADD SKILL ----------
+function addSkill(value = "") {
+    let input = document.getElementById("skillInput");
+    let val = value || input.value.trim();
+    if (!val) return;
+
+    let container = document.getElementById("skills-container");
+
+    let div = document.createElement("div");
+    div.className = "flex gap-2 mt-2";
+
+    div.innerHTML = `
+        <input type="text" name="skills[]" value="${val}" class="input-style">
+        <button type="button" onclick="this.parentElement.remove()">❌</button>
+    `;
+
+    container.appendChild(div);
+    input.value = "";
+}
+
+// ---------- LOAD EXISTING DATA ----------
+window.onload = function () {
+    let locations = {{ profile.preferred_location|default:"[]"|safe }};
+    let skills = {{ profile.skills|default:"[]"|safe }};
+
+    locations.forEach(loc => addLocation(loc));
+    skills.forEach(skill => addSkill(skill));
+};
+</script>
+
 {% endblock %}
