@@ -4,51 +4,53 @@
 <div class="max-w-7xl mx-auto">
     <h1 class="text-3xl font-bold mb-8">MY PROFILE DASHBOARD</h1>
 
-    <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <form id="profileForm" class="grid grid-cols-1 md:grid-cols-3 gap-6">
         {% csrf_token %}
 
-       <!-- PERSONAL INFO -->
-<div class="card-style space-y-6">
-    <h3 class="font-bold text-lg">Personal Information</h3>
-    
-    <div class="flex items-center gap-4 p-4 bg-slate-900/50 rounded-2xl border border-slate-700">
-        <div class="w-20 h-20 bg-slate-800 rounded-xl overflow-hidden border border-slate-600 flex items-center justify-center">
-            {% if profile.profile_pic %}
-                <img src="{{ profile.profile_pic.url }}" class="w-full h-full object-cover">
-            {% else %}
-                <span class="text-slate-500 text-[10px] font-bold">NO PHOTO</span>
-            {% endif %}
+        <!-- ================= PERSONAL INFO ================= -->
+        <div class="card-style space-y-6">
+            <h3 class="font-bold text-lg">Personal Information</h3>
+            
+            <!-- Profile Image -->
+            <div class="flex items-center gap-4 p-4 bg-slate-900/50 rounded-2xl border border-slate-700">
+                <div class="w-20 h-20 bg-slate-800 rounded-xl overflow-hidden border border-slate-600 flex items-center justify-center">
+                    {% if profile.profile_image %}
+                        <img src="{{ profile.profile_image.url }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <span class="text-slate-500 text-[10px] font-bold">NO PHOTO</span>
+                    {% endif %}
+                </div>
+
+                <input type="file" id="profileImageInput" class="text-xs">
+            </div>
+
+            <!-- Inputs -->
+            <div class="space-y-4">
+                <div>
+                    <label class="label-style">First Name</label>
+                    <input type="text" name="firstname" class="input-style">
+                </div>
+
+                <div>
+                    <label class="label-style">Last Name</label>
+                    <input type="text" name="lastname" class="input-style">
+                </div>
+
+                <div>
+                    <label class="label-style">Phone Number</label>
+                    <input type="text" name="phone" class="input-style" placeholder="Enter 10 digit number">
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="flex justify-end">
+                <button type="submit" class="bg-blue-600 px-4 py-2 rounded-lg font-semibold text-sm">
+                    Save Changes
+                </button>
+            </div>
         </div>
 
-        <input type="file" name="profile_pic" class="text-xs">
-    </div>
-
-    <div class="space-y-4">
-        <div>
-            <label class="label-style">First Name</label>
-            <input type="text" name="firstname" value="{{ profile.firstname }}" class="input-style">
-        </div>
-
-        <div>
-            <label class="label-style">Last Name</label>
-            <input type="text" name="lastname" value="{{ profile.lastname }}" class="input-style">
-        </div>
-
-       
-        <div>
-            <label class="label-style">Phone Number</label>
-            <input type="text" name="phone" value="{{ profile.phone }}" class="input-style">
-        </div>
-    </div>
-
-    <div class="flex justify-end">
-        <button class="bg-blue-600 px-4 py-2 rounded-lg font-semibold text-sm">
-            Save Changes
-        </button>
-    </div>
-</div>
-
-        <!-- LOCATIONS -->
+        <!-- ================= LOCATIONS ================= -->
         <div class="card-style">
             <h3 class="font-bold mb-4">Preferred Locations</h3>
 
@@ -60,7 +62,7 @@
             </div>
         </div>
 
-        <!-- SKILLS -->
+        <!-- ================= SKILLS ================= -->
         <div class="card-style">
             <h3 class="font-bold mb-4">Skills</h3>
 
@@ -75,7 +77,9 @@
     </form>
 </div>
 
+<!-- ================= JAVASCRIPT ================= -->
 <script>
+
 // ---------- ADD LOCATION ----------
 function addLocation(value = "") {
     let input = document.getElementById("locationInput");
@@ -116,14 +120,104 @@ function addSkill(value = "") {
     input.value = "";
 }
 
-// ---------- LOAD EXISTING DATA ----------
-window.onload = function () {
-    let locations = {{ profile.preferred_location|default:"[]"|safe }};
-    let skills = {{ profile.skills|default:"[]"|safe }};
+// ---------- IMAGE UPLOAD ----------
+document.getElementById("profileImageInput").addEventListener("change", async function() {
+    let file = this.files[0];
+    if (!file) return;
 
-    locations.forEach(loc => addLocation(loc));
-    skills.forEach(skill => addSkill(skill));
+    let formData = new FormData();
+    formData.append("profile_image", file);
+
+    let res = await fetch("/jobseeker/profile/upload-image/", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCSRFToken()
+        },
+        body: formData
+    });
+
+    let data = await res.json();
+
+    if (res.ok) {
+        alert("Image uploaded ✅");
+        location.reload();
+    } else {
+        alert("Error: " + JSON.stringify(data));
+    }
+});
+
+// ---------- PROFILE UPDATE ----------
+document.getElementById("profileForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    let firstname = document.querySelector('input[name="firstname"]').value;
+    let lastname = document.querySelector('input[name="lastname"]').value;
+    let phone = document.querySelector('input[name="phone"]').value;
+
+    let skills = [];
+    document.querySelectorAll('input[name="skills[]"]').forEach(i => {
+        if (i.value.trim()) {
+            skills.push({ skill_name: i.value.trim() });
+        }
+    });
+
+    let locations = [];
+    document.querySelectorAll('input[name="locations[]"]').forEach(i => {
+        if (i.value.trim()) {
+            locations.push({ location_name: i.value.trim() });
+        }
+    });
+
+    let payload = {
+        full_name: firstname + " " + lastname,
+        phone_number: phone,
+        skills: skills,
+        locations: locations
+    };
+
+    let res = await fetch("/jobseeker/profile/", {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken()
+        },
+        body: JSON.stringify(payload)
+    });
+
+    let data = await res.json();
+
+    if (res.ok) {
+        alert("Profile updated successfully ✅");
+    } else {
+        alert("Error: " + JSON.stringify(data));
+    }
+});
+
+// ---------- LOAD EXISTING DATA ----------
+window.onload = async function () {
+    let res = await fetch("/jobseeker/profile/");
+    if (!res.ok) return;
+
+    let data = await res.json();
+
+    // Split full name
+    if (data.full_name) {
+        let parts = data.full_name.split(" ");
+        document.querySelector('[name="firstname"]').value = parts[0] || "";
+        document.querySelector('[name="lastname"]').value = parts.slice(1).join(" ") || "";
+    }
+
+    document.querySelector('[name="phone"]').value = data.phone_number || "";
+
+    data.skills?.forEach(s => addSkill(s.skill_name));
+    data.locations?.forEach(l => addLocation(l.location_name));
 };
+
+// ---------- CSRF ----------
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
 </script>
 
 {% endblock %}
