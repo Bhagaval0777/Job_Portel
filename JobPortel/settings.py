@@ -142,7 +142,14 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 #----------------------------------------------------------------------------------------
-
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '50/min',
+    }
+}                                                   # ddos attack prevention
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

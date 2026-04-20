@@ -230,7 +230,7 @@
     <div class="otp-info">
       OTP sent to <strong id="otp-email-display"></strong>.
 
-      Enter the 6-digit code below. Valid for <strong>5 minutes</strong>.
+      Enter the 6-digit code below. Valid for <strong>2 minutes</strong>.
     </div>
 
     <div class="field-group">
@@ -395,26 +395,34 @@ You can now sign in.
     setTimeout(() => otpBoxes.forEach(b => b.classList.remove('error')), 500);
   }
 
-  // Timer — 5 min matches OTP_WINDOW in views.py
   function startTimer(seconds) {
-    clearInterval(timerInterval);
-    document.getElementById('resend-btn').disabled = true;
-    document.getElementById('timer-text').style.display = '';
-    let remaining = seconds;
-    function tick() {
-      const m = String(Math.floor(remaining / 60)).padStart(1, '0');
-      const s = String(remaining % 60).padStart(2, '0');
-      document.getElementById('timer-count').textContent = `${m}:${s}`;
-      if (remaining <= 0) {
-        clearInterval(timerInterval);
-        document.getElementById('timer-text').style.display = 'none';
-        document.getElementById('resend-btn').disabled = false;
-      }
-      remaining--;
+  clearInterval(timerInterval);
+
+  let remaining = seconds;
+  document.getElementById('timer-text').style.display = '';
+
+  function tick() {
+    const m = String(Math.floor(remaining / 60)).padStart(1, '0');
+    const s = String(remaining % 60).padStart(2, '0');
+    document.getElementById('timer-count').textContent = `${m}:${s}`;
+
+    if (remaining > 90) {
+      document.getElementById('resend-btn').disabled = true;
+    } else {
+      document.getElementById('resend-btn').disabled = false;
     }
-    tick();
-    timerInterval = setInterval(tick, 1000);
+
+    if (remaining <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById('timer-text').style.display = 'none';
+    }
+
+    remaining--;
   }
+
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
 
   // Panel helpers
   function showPanel(id) {
@@ -476,7 +484,7 @@ You can now sign in.
         clearAlert();
         showPanel('panel-otp');
         setStep(2);
-        startTimer(300); // matches OTP_EXPIRY = 300 in views.py
+        startTimer(120);
         clearOtpBoxes();
 
       } else if (res.status === 429) {
@@ -549,23 +557,18 @@ You can now sign in.
   // If count >= OTP_LIMIT it returns 429, shown as warning
   async function resendOtp() {
     clearAlert();
-    const email   = document.getElementById('email').value.trim();
-    const pass    = document.getElementById('password').value;
-    const confirm = document.getElementById('confirm-password').value;
-    const role    = document.querySelector('input[name="role"]:checked').value;
 
     document.getElementById('resend-btn').disabled = true;
 
     try {
-      const res = await fetch('/api/v1/auth/register/', {
+      const res = await fetch('/users/resend-otp/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': getCookie('csrftoken'),
         },
         body: JSON.stringify({
-          user_email: email, password: pass,
-          confirm_password: confirm, role: role,
+          verify_token: verifyToken  
         }),
       });
 
@@ -573,7 +576,7 @@ You can now sign in.
 
       if (res.status === 200) {
         showAlert('success', 'A new OTP has been sent to your email.');
-        startTimer(300);
+        startTimer(120);
         clearOtpBoxes();
       } else if (res.status === 429) {
         // generate_otp() returned None — OTP_LIMIT (5) reached in OTP_WINDOW (300s)
