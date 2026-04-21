@@ -14,8 +14,19 @@ logger = logging.getLogger(__name__)
 class JobSeekerProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def _check_role(self, request):
+        """Return a 403 Response if the user is not a job seeker, else None."""
+        if getattr(request.user, 'role', None) != 'seeker':
+            return Response(
+                {'error': 'Only job seekers can access this endpoint.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return None
     # 🔹 GET PROFILE
     def get(self, request):
+        role_error = self._check_role(request)
+        if role_error:
+            return role_error
         try:
             profile = JobSeekerProfile.objects.filter(user=request.user).first()
 
@@ -53,7 +64,10 @@ class JobSeekerProfileAPIView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response(
-                    {"message": "Profile created successfully"},
+                    {
+                     "message": "Profile created successfully",
+                     'data':serializer.data
+                    },
                     status=status.HTTP_201_CREATED
                 )
 
