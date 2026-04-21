@@ -16,7 +16,7 @@ class JobSeekerProfileAPIView(APIView):
 
     def _check_role(self, request):
         """Return a 403 Response if the user is not a job seeker, else None."""
-        if getattr(request.user, 'role', None) != 'seeker':
+        if getattr(request.user, 'role', None) != 'jobseeker':
             return Response(
                 {'error': 'Only job seekers can access this endpoint.'},
                 status=status.HTTP_403_FORBIDDEN,
