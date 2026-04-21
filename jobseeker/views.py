@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from django.shortcuts import render
 
 import logging
 from django.db import IntegrityError
@@ -11,8 +12,10 @@ from .serializers import JobSeekerProfileSerializer
 
 logger = logging.getLogger(__name__)
 
+def profile(request):
+    return render(request, 'jobseeker/profile.html')
+
 class JobSeekerProfileAPIView(APIView):
-    permission_classes = [IsAuthenticated]
 
     def _check_role(self, request):
         """Return a 403 Response if the user is not a job seeker, else None."""
@@ -50,16 +53,13 @@ class JobSeekerProfileAPIView(APIView):
     def post(self, request):
         try:
             # Prevent duplicate profile
-            if JobSeekerProfile.objects.filter(user=request.user).exists():
+            if JobSeekerProfile.objects.filter.exists():
                 return Response(
                     {"error": "Profile already exists"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            serializer = JobSeekerProfileSerializer(
-                data=request.data,
-                context={'request': request}
-            )
+            serializer = JobSeekerProfileSerializer(data=request.data)
 
             if serializer.is_valid():
                 serializer.save()
@@ -93,7 +93,7 @@ class JobSeekerProfileAPIView(APIView):
             return role_error
  
         try:
-            profile = JobSeekerProfile.objects.filter(user=request.user).first()
+            profile = JobSeekerProfile.objects.first()
  
             if not profile:
                 return Response(
@@ -104,7 +104,6 @@ class JobSeekerProfileAPIView(APIView):
             serializer = JobSeekerProfileSerializer(
                 profile,
                 data=request.data,
-                context={'request': request},
                 partial=False,          # PUT = full replacement
             )
  
@@ -131,7 +130,7 @@ class JobSeekerProfileAPIView(APIView):
             return role_error
  
         try:
-            profile = JobSeekerProfile.objects.filter(user=request.user).first()
+            profile = JobSeekerProfile.objects.first()
  
             if not profile:
                 return Response(
@@ -142,7 +141,6 @@ class JobSeekerProfileAPIView(APIView):
             serializer = JobSeekerProfileSerializer(
                 profile,
                 data=request.data,
-                context={'request': request},
                 partial=True,           # PATCH = only update sent fields
             )
  
@@ -161,3 +159,4 @@ class JobSeekerProfileAPIView(APIView):
                 {'error': 'Something went wrong. Please try again.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        
