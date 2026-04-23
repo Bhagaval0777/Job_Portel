@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8">MY PROFILE DASHBOARD</h1>
+
+    <form id="profileForm" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% csrf_token %}
+
+        <!-- PERSONAL INFO -->
+        <div class="card-style space-y-6">
+            <h3 class="font-bold text-lg">Personal Information</h3>
+
+            <input type="text" name="firstname" placeholder="First Name" class="input-style">
+            <input type="text" name="lastname" placeholder="Last Name" class="input-style">
+
+            <input type="text" name="phone" placeholder="Phone Number" class="input-style">
+
+            <div class="flex gap-4">
+                <label><input type="radio" name="gender" value="male"> Male</label>
+                <label><input type="radio" name="gender" value="female"> Female</label>
+                <label><input type="radio" name="gender" value="other"> Other</label>
+            </div>
+
+            <input type="text" name="headline" placeholder="Headline (max 30 words)" class="input-style">
+            <textarea name="bio" placeholder="Bio (max 150 words)" class="input-style"></textarea>
+
+            <div class="flex justify-end">
+                <button type="submit" class="bg-blue-600 px-4 py-2 rounded-lg text-sm font-semibold">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+
+        <!-- LOCATIONS -->
+        <div class="card-style">
+            <h3 class="font-bold mb-4">Preferred Locations</h3>
+            <div id="locations-container" class="max-h-[300px] overflow-y-auto"></div>
+
+            <div class="flex gap-2 mt-3">
+                <input type="text" id="locationInput" class="input-style" placeholder="Add Location">
+                <button type="button" onclick="addLocation()" class="bg-blue-600 px-3 rounded">Add</button>
+            </div>
+        </div>
+
+        <!-- SKILLS -->
+        <div class="card-style">
+            <h3 class="font-bold mb-4">Skills</h3>
+            <div id="skills-container" class="max-h-[300px] overflow-y-auto"></div>
+
+            <div class="flex gap-2 mt-3">
+                <input type="text" id="skillInput" class="input-style" placeholder="Add Skill">
+                <button type="button" onclick="addSkill()" class="bg-blue-600 px-3 rounded">Add</button>
+            </div>
+        </div>
+
+        <!-- EXPERIENCE + EDUCATION -->
+        <div class="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- EXPERIENCE -->
+            <div class="card-style">
+                <h3 class="font-bold mb-4">Experience</h3>
+                <div id="experience-container" class="max-h-[300px] overflow-y-auto"></div>
+
+                <button type="button" onclick="addExperience()" class="bg-blue-600 px-3 py-1 rounded mt-2">
+                    Add Experience
+                </button>
+            </div>
+
+            <!-- EDUCATION -->
+            <div class="card-style">
+                <h3 class="font-bold mb-4">Education</h3>
+                <div id="education-container" class="max-h-[300px] overflow-y-auto"></div>
+
+                <button type="button" onclick="addEducation()" class="bg-blue-600 px-3 py-1 rounded mt-2">
+                    Add Education
+                </button>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+<script>
+// ===== HELPERS =====
+function wordCount(text) {
+    return text.trim().split(/\s+/).filter(w => w).length;
+}
+
+// ===== LOCATION =====
+function addLocation(value="") {
+    let val = value || document.getElementById("locationInput").value.trim();
+    if (!val) return;
+
+    let div = document.createElement("div");
+    div.className = "flex gap-2 mt-2";
+
+    div.innerHTML = `
+        <input type="text" class="input-style location-input" value="${val}">
+        <button type="button" onclick="this.parentElement.remove()">❌</button>
+    `;
+
+    document.getElementById("locations-container").appendChild(div);
+    document.getElementById("locationInput").value = "";
+}
+
+// ===== SKILL =====
+function addSkill(value="") {
+    let val = value || document.getElementById("skillInput").value.trim();
+    if (!val) return;
+
+    let div = document.createElement("div");
+    div.className = "flex gap-2 mt-2";
+
+    div.innerHTML = `
+        <input type="text" class="input-style skill-input" value="${val}">
+        <button type="button" onclick="this.parentElement.remove()">❌</button>
+    `;
+
+    document.getElementById("skills-container").appendChild(div);
+    document.getElementById("skillInput").value = "";
+}
+
+// ===== EXPERIENCE =====
+function addExperience() {
+    let div = document.createElement("div");
+    div.className = "mt-3 border p-3 rounded";
+
+    div.innerHTML = `
+        <input type="hidden" class="exp-id">
+
+        <input placeholder="Company" class="input-style exp-company mb-2">
+        <input placeholder="Role" class="input-style exp-role mb-2">
+        <textarea placeholder="Description" class="input-style exp-desc mb-2"></textarea>
+
+        <select class="input-style exp-type mb-2">
+            <option value="fulltime">Full Time</option>
+            <option value="parttime">Part Time</option>
+            <option value="intern">Internship</option>
+            <option value="contract">Contract</option>
+        </select>
+
+        <label class="text-xs">Start Date</label>
+        <input type="date" class="input-style exp-start mb-2">
+
+        <label class="text-xs">End Date</label>
+        <input type="date" class="input-style exp-end mb-2">
+
+        <label class="flex items-center gap-2">
+            <input type="checkbox" class="exp-current" onchange="toggleExpEnd(this)"> Currently Working
+        </label>
+
+        <div class="flex justify-end mt-2">
+            <button type="button" onclick="this.closest('div').remove()" class="text-red-400 text-xs">
+                Remove this block ❌
+            </button>
+        </div>
+    `;
+
+    document.getElementById("experience-container").appendChild(div);
+}
+
+function toggleExpEnd(cb) {
+    let end = cb.closest("div").querySelector(".exp-end");
+    end.disabled = cb.checked;
+    if (cb.checked) end.value = "";
+}
+
+// ===== EDUCATION =====
+function addEducation() {
+    let div = document.createElement("div");
+    div.className = "mt-3 border p-3 rounded";
+
+    div.innerHTML = `
+        <input type="hidden" class="edu-id">
+
+        <input placeholder="Qualification" class="input-style edu-qualification mb-2">
+        <input placeholder="Field of Study" class="input-style edu-field mb-2">
+        <input placeholder="Institution" class="input-style edu-institution mb-2">
+
+        <label class="text-xs">Start Year</label>
+        <input type="number" class="input-style edu-start mb-2" placeholder="YYYY">
+
+        <label class="text-xs">End Year</label>
+        <input type="number" class="input-style edu-end mb-2" placeholder="YYYY">
+
+        <label class="flex items-center gap-2">
+            <input type="checkbox" class="edu-current" onchange="toggleEduEnd(this)"> Currently Studying
+        </label>
+
+        <div class="flex justify-end mt-2">
+            <button type="button" onclick="this.closest('div').remove()" class="text-red-400 text-xs">
+                Remove this block ❌
+            </button>
+        </div>
+    `;
+
+    document.getElementById("education-container").appendChild(div);
+}
+
+function toggleEduEnd(cb) {
+    let end = cb.closest("div").querySelector(".edu-end");
+    end.disabled = cb.checked;
+    if (cb.checked) end.value = "";
+}
+
+// ===== SUBMIT =====
+document.getElementById("profileForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    let firstname = document.querySelector('[name="firstname"]').value;
+    let lastname = document.querySelector('[name="lastname"]').value;
+    let phone = document.querySelector('[name="phone"]').value;
+    let gender = document.querySelector('input[name="gender"]:checked');
+    let headline = document.querySelector('[name="headline"]').value;
+    let bio = document.querySelector('[name="bio"]').value;
+
+    if (!/^\d{10}$/.test(phone)) return alert("Invalid phone");
+    if (!gender) return alert("Select gender");
+    if (wordCount(headline) > 30) return alert("Headline too long");
+    if (wordCount(bio) > 150) return alert("Bio too long");
+
+    let skills = [...document.querySelectorAll('.skill-input')]
+        .map(i => ({skill_name: i.value.trim()}));
+
+    let locations = [...document.querySelectorAll('.location-input')]
+        .map(i => ({location_name: i.value.trim()}));
+
+    let experiences = [];
+    document.querySelectorAll('#experience-container > div').forEach(div => {
+        experiences.push({
+            company_name: div.querySelector('.exp-company').value,
+            role: div.querySelector('.exp-role').value,
+            description: div.querySelector('.exp-desc').value,
+            employment_type: div.querySelector('.exp-type').value,
+            start_date: div.querySelector('.exp-start').value,
+            end_date: div.querySelector('.exp-current').checked ? null : div.querySelector('.exp-end').value,
+            is_current: div.querySelector('.exp-current').checked
+        });
+    });
+
+    let educations = [];
+    document.querySelectorAll('#education-container > div').forEach(div => {
+        educations.push({
+            qualification: div.querySelector('.edu-qualification').value,
+            field_of_study: div.querySelector('.edu-field').value,
+            institution: div.querySelector('.edu-institution').value,
+            start_year: div.querySelector('.edu-start').value,
+            end_year: div.querySelector('.edu-current').checked ? null : div.querySelector('.edu-end').value,
+            is_current: div.querySelector('.edu-current').checked
+        });
+    });
+
+    let data = {
+        full_name: firstname + " " + lastname,
+        phone_number: phone,
+        gender: gender.value,
+        headline,
+        bio,
+        skills,
+        locations,
+        experiences,
+        educations
+    };
+
+    console.log("Sending:", data);
+
+    fetch("/jobseeker/profile/", {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(() => alert("Profile updated successfully ✅"))
+    .catch(() => alert("Error ❌"));
+});
+</script>
+
+{% endblock %}

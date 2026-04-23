@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from jobseeker.models import JobSeekerProfile,Education,Experience,Skill,PreferredLocation
-from validators import validate_skill_name
+from .validators import validate_skill_name
 
 
 class PreferredLocationSerializer(serializers.ModelSerializer):

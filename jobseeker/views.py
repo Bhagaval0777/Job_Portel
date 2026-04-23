@@ -13,7 +13,7 @@ from .serializers import JobSeekerProfileSerializer
 logger = logging.getLogger(__name__)
 
 def profile(request):
-    return render(request, 'jobseeker/profile.html')
+    return render(request, 'profile.html')
 
 class JobSeekerProfileAPIView(APIView):
 

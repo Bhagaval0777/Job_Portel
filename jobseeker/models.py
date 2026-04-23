@@ -1,7 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.conf import settings
-from validators import phone_validator
+from .validators import phone_validator
 
 # Create your models here.
 
