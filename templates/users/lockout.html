@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Account Locked - JobPortel{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --danger-color: #dc2626;
+    --warning-bg: #fffbeb;
+    --warning-border: #fcd34d;
+    --warning-text: #92400e;
+  }
+
+  .lockout-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    padding: 20px;
+  }
+
+  .lockout-card {
+    width: 100%;
+    max-width: 450px;
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+
+  .lockout-icon {
+    background-color: #fee2e2;
+    color: var(--danger-color);
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 24px;
+    font-size: 32px;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 12px;
+  }
+
+  .timer-box {
+    background-color: var(--warning-bg);
+    border: 1px solid var(--warning-border);
+    color: var(--warning-text);
+    padding: 16px;
+    border-radius: 8px;
+    margin: 24px 0;
+    font-size: 0.95rem;
+  }
+
+  .timer-box strong {
+    display: block;
+    font-size: 1.1rem;
+    margin-top: 4px;
+  }
+
+  p {
+    color: #6b7280;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+
+  .btn-back {
+    display: inline-block;
+    width: 100%;
+    padding: 12px;
+    background-color: #4f46e5;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+  }
+
+  .btn-back:hover {
+    background-color: #4338ca;
+  }
+</style>
+
+<div class="lockout-wrapper">
+  <div class="lockout-card">
+    <div class="lockout-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+      </svg>
+    </div>
+
+    <h2>Security Lockout</h2>
+    <p>For your protection, this account has been temporarily locked due to too many failed login attempts.</p>
+
+    {% if unlock_time %}
+      <div class="timer-box">
+        Account will automatically unlock in:
+        <strong>{{ unlock_time|timeuntil }}</strong>
+      </div>
+    {% else %}
+      <div class="timer-box">
+        Please try again after <strong>15 minutes</strong>.
+      </div>
+    {% endif %}
+
+    <a href="{% url 'login' %}" class="btn-back">Return to Login</a>
+  </div>
+</div>
+{% endblock %}

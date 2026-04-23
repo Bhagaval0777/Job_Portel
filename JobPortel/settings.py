@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,17 +41,22 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'axes',
     'Users',
 ]
 
 MIDDLEWARE = [
+    
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'axes.middleware.AxesMiddleware',
+    'JobPortel.middleware.SilentTokenRefreshMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'JobPortel.urls'
@@ -136,12 +143,73 @@ from datetime import timedelta
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'AUTH_COOKIE': 'access_token',      # Cookie name for access token
-    'AUTH_COOKIE_REFRESH': 'refresh_token', # Cookie name for refresh token
-    'AUTH_COOKIE_SECURE': False,        # Set to True in production (HTTPS)
-    'AUTH_COOKIE_HTTP_ONLY': True,      # Prevents JS access (XSS protection)
-    'AUTH_COOKIE_PATH': '/',            # Where the cookie is valid
-    'AUTH_COOKIE_SAMESITE': 'Lax',      # CSRF protection
+    'REFRESH_TOKEN_LIFETIME': timedelta(minutes=2),
+    'AUTH_COOKIE': 'access_token',
+    # Cookie name for refresh token
+    'AUTH_COOKIE_REFRESH': 'refresh_token',
+    # Set to True in production (HTTPS)
+    'AUTH_COOKIE_SECURE': False,
+    # Prevents JS access (XSS protection)
+    'AUTH_COOKIE_HTTP_ONLY': True,
+    # Where the cookie is valid
+    'AUTH_COOKIE_PATH': '/',
+    # CSRF protection
+    'AUTH_COOKIE_SAMESITE': 'Lax',
 }
 
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+
+AXES_FAILURE_LIMIT = 3
+
+# Lockout duration
+AXES_COOLOFF_TIME = timedelta(minutes=15)
+AXES_USE_ATTEMPT_EXPIRATION = True
+
+# Reset attempts on a successful login (Default is True, but good to be explicit)
+AXES_RESET_ON_SUCCESS = True
+
+AXES_LOCKOUT_STRATEGY = 'axes.strategies.UsernameAndIPStrategy'
+
+# The URL where the user will be sent (must match your users app route)
+AXES_LOCKOUT_URL = '/users/locked/'
+
+# Logging configuration
+
+
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',  
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOG_DIR, 'users_activity.log'),
+            'formatter': 'standard',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+        },
+    },
+    'loggers': {
+        'users': { 
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}

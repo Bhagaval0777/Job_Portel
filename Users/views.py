@@ -1,153 +1,119 @@
 from django.conf import settings
+from django.shortcuts import render
+from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.shortcuts import render
 from rest_framework import status
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .serializers import UserSerializer
-from rest_framework.permissions import IsAuthenticated , AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .utils import get_client_ip
-from .models import LoginLog
-from django.contrib.auth import get_user_model
+from axes.handlers.proxy import AxesProxyHandler
 
+from .serializers import UserSerializer
+from .utils import get_client_ip
+import logging
+
+logger = logging.getLogger('users')
 
 class LoginView(TokenObtainPairView):
-
-    def get(self, request, *args, **kwargs):
-        # API-only: return a small JSON hint rather than rendering HTML
+    def get(self, request):
         return render(request, 'users/login.html')
-    
 
     def post(self, request, *args, **kwargs):
+        # 1. Pre-check: Check if already locked out
+        if AxesProxyHandler.is_locked(request):
+            logger.warning(f"Login denied: IP {get_client_ip(request)} is already locked out.")
+            return Response(
+                {"detail": "Account locked. Please try again later."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         ip = get_client_ip(request)
         ua = request.META.get('HTTP_USER_AGENT')
         username_attempted = request.data.get('username', 'Unknown')
 
         try:
-            # 2. Call the parent post method (this handles authentication)
+            # 2. Call the parent post method (handles authentication)
             response = super().post(request, *args, **kwargs)
         except Exception as e:
-            # 3. LOG FAILURE: If authentication fails, super().post() raises an exception
-            LoginLog.objects.create(
-                attempted_username=username_attempted,
-                status=LoginLog.FAILED,
-                ip_address=ip,
-                user_agent=ua,
-                failure_reason=str(e)
-            )
+           
+            logger.error(f"Login failed for user '{username_attempted}' from IP {ip}. Reason: {str(e)}")
+
+            # 4. Post-check: Did this attempt trigger the lockout?
+            if AxesProxyHandler.is_locked(request):
+                logger.critical(f"SECURITY: IP {ip} has been locked out after failed attempt for user '{username_attempted}'.")
+                return Response(
+                    {"detail": "Too many attempts. Account locked."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
             raise e
-        # Only set cookies when the token pair is present (i.e. successful authentication
-        # via POST). This avoids creating cookies when the view is accessed via GET
-        # (browsable API) or when authentication failed and the response has no tokens.
+
         if response.status_code == 200:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid()
-            user = serializer.user 
+            user = serializer.user
 
-            LoginLog.objects.create(
-                user=user,
-                attempted_username=username_attempted,
-                status=LoginLog.SUCCESS,
-                ip_address=ip,
-                user_agent=ua
-            )
+            logger.info(f"Login successful: User '{user.username}' (ID: {user.id}) from IP {ip}")
+
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
 
             if access_token and refresh_token:
+                cookie_settings = settings.SIMPLE_JWT
+                common_kwargs = {
+                    'httponly': cookie_settings['AUTH_COOKIE_HTTP_ONLY'],
+                    'secure': cookie_settings['AUTH_COOKIE_SECURE'],
+                    'samesite': cookie_settings['AUTH_COOKIE_SAMESITE'],
+                    'path': cookie_settings['AUTH_COOKIE_PATH'],
+                }
+
                 response.set_cookie(
-                    key=settings.SIMPLE_JWT['AUTH_COOKIE'],
+                    key=cookie_settings['AUTH_COOKIE'],
                     value=access_token,
-                    httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-                    secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-                    samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
-                    path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'],
+                    **common_kwargs
                 )
                 response.set_cookie(
-                    key=settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
+                    key=cookie_settings['AUTH_COOKIE_REFRESH'],
                     value=refresh_token,
-                    httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-                    secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-                    samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
-                    path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'],
+                    **common_kwargs
                 )
-                # Remove tokens from body for extra security if desired
+
+                # Remove tokens from body for extra security
                 response.data.pop('access', None)
                 response.data.pop('refresh', None)
-            
+
         return response
 
 
-class CookieTokenRefreshView(TokenRefreshView):
-    def post(self, request, *args, **kwargs):
-        # 1. Get the token from cookies
-        refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])
-        
-        # 2. Inject it into request.data safely
-        if refresh_token:
-            # We must create a mutable copy of the data to modify it
-            data = request.data.copy()
-            data['refresh'] = refresh_token
-            request._full_data = data # This ensures the serializer sees it
-        
-        response = super().post(request, *args, **kwargs)
-        
-        if response.status_code == 200:
-            access_token = response.data.get('access')
-            
-            # 3. Bake the new access token into a cookie
-            response.set_cookie(
-                key=settings.SIMPLE_JWT['AUTH_COOKIE'],
-                value=access_token,
-                httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-                secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-                samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
-                path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'],
-            )
-            
-            # Clean up the JSON response
-            if 'access' in response.data:
-                del response.data['access']
-                
-        return response     
-
 class LogoutView(APIView):
-    # This is the key: disable authentication for this view
-    # so the expired token doesn't trigger a 401
-    authentication_classes = [] 
+    authentication_classes = []
     permission_classes = (AllowAny,)
 
     def post(self, request):
-        response = Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
+        response = Response(
+            {"detail": "Successfully logged out."},
+            status=status.HTTP_200_OK
+        )
         ip = get_client_ip(request)
         ua = request.META.get('HTTP_USER_AGENT')
 
         try:
-            # Try to blacklist the refresh token if it exists
-            refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])
+            refresh_token = request.COOKIES.get(
+                settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH']
+            )
             if refresh_token:
-                # We can still manually blacklist it here
                 token = RefreshToken(refresh_token)
                 user_id = token['user_id']
-                User = get_user_model()
-                user = User.objects.filter(id=user_id).first()
+                user_model = get_user_model()
+                user = user_model.objects.filter(id=user_id).first()
 
-                LoginLog.objects.create(
-                    user=user,
-                    attempted_username=user.username if user else "Unknown",
-                    status=LoginLog.LOGOUT,
-                    ip_address=ip,
-                    user_agent=ua
-                )
+                if user:
+                    logger.info(f"Logout successful: User '{user.username}' (ID: {user.id}) from IP {ip}")
+
                 token.blacklist()
         except Exception:
-            # If the refresh token is already expired or invalid, 
-            # we don't care, we still want to clear the cookies.
             pass
 
-        # Clear the cookies from the browser
         response.delete_cookie(
             settings.SIMPLE_JWT['AUTH_COOKIE'],
             path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH']
@@ -156,22 +122,26 @@ class LogoutView(APIView):
             settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
             path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH']
         )
-        
+
         return response
 
 
 class UserDetailsView(APIView):
-    permission_classes = [IsAuthenticated] # Ensures a valid cookie exists
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # request.user is automatically populated by our CookieJWTAuthentication
         serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 def home_page(request):
-    """Render the frontend home page. JavaScript on this page will call the
+    """
+    Render the frontend home page. JavaScript on this page will call the
     API (`/users/home/`) to fetch the current user details if authenticated.
-    This view intentionally does not enforce authentication so it can show
-    login/register links and a JS-driven UI to the browser.
     """
     return render(request, 'users/home.html')
+
+
+def lockout_view(request):
+    logger.warning(f"Lockout page rendered for IP: {get_client_ip(request)}")
+    return render(request, 'users/lockout.html')

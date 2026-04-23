@@ -9,10 +9,11 @@ class LoginSerializer(serializers.Serializer):
     def validate(self, data):
         email = data.get("email")
         password = data.get("password")
+        request = self.context.get("request")
 
         if email and password:
             # We create users with username=email in registration, so authenticate using username
-            user = authenticate(username=email, password=password)
+            user = authenticate(request=request, username=email, password=password)
             if not user:
                 raise serializers.ValidationError("Invalid login credentials.")
             if not user.is_active:
@@ -26,5 +27,5 @@ class LoginSerializer(serializers.Serializer):
     
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User # Or your CustomUser model
+        model = User
         fields = ['id', 'username', 'email']
