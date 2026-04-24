@@ -1,0 +1,364 @@
+INFO | 2026-04-21 14:07:04,241 | autoreload | Watching for file changes with StatReloader
+WARNING | 2026-04-21 14:07:13,740 | log | Not Found: /
+WARNING | 2026-04-21 14:07:13,740 | log | "GET / HTTP/1.1" 404 2313
+ERROR | 2026-04-21 14:07:22,480 | log | Internal Server Error: /jobseeker/profile/
+Traceback (most recent call last):
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\core\handlers\base.py", line 221, in _get_response
+    response = response.render()
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\template\response.py", line 114, in render
+    self.content = self.rendered_content
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\rest_framework\response.py", line 74, in rendered_content
+    ret = renderer.render(self.data, accepted_media_type, context)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\rest_framework\renderers.py", line 749, in render
+    template = loader.get_template(self.template)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: rest_framework/api.html
+ERROR | 2026-04-21 14:07:22,488 | log | "GET /jobseeker/profile/ HTTP/1.1" 500 87388
+INFO | 2026-04-21 14:07:39,003 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22711
+WARNING | 2026-04-21 14:07:39,413 | log | Forbidden: /jobseeker/profile/
+WARNING | 2026-04-21 14:07:39,414 | log | "GET /jobseeker/profile/ HTTP/1.1" 403 54
+ERROR | 2026-04-21 14:07:53,990 | log | Internal Server Error: /jobseeker/profile/
+ERROR | 2026-04-21 14:07:53,991 | log | "POST /jobseeker/profile/ HTTP/1.1" 500 32
+ERROR | 2026-04-21 14:08:23,436 | log | Internal Server Error: /jobseeker/profile/
+ERROR | 2026-04-21 14:08:23,437 | log | "POST /jobseeker/profile/ HTTP/1.1" 500 32
+INFO | 2026-04-21 14:16:13,070 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-21 14:16:14,652 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-21 14:16:21,960 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-21 14:16:28,904 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22711
+WARNING | 2026-04-21 14:16:29,103 | log | Not Found: /jobseeker/profile/
+WARNING | 2026-04-21 14:16:29,104 | log | "GET /jobseeker/profile/ HTTP/1.1" 404 31
+ERROR | 2026-04-21 14:16:44,348 | log | Internal Server Error: /jobseeker/profile/
+ERROR | 2026-04-21 14:16:44,349 | log | "POST /jobseeker/profile/ HTTP/1.1" 500 32
+INFO | 2026-04-21 14:24:02,933 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-21 14:24:10,934 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22711
+WARNING | 2026-04-21 14:24:11,050 | log | Not Found: /jobseeker/profile/
+WARNING | 2026-04-21 14:24:11,051 | log | "GET /jobseeker/profile/ HTTP/1.1" 404 31
+ERROR | 2026-04-21 14:24:25,706 | log | Internal Server Error: /jobseeker/profile/
+ERROR | 2026-04-21 14:24:25,706 | log | "POST /jobseeker/profile/ HTTP/1.1" 500 32
+INFO | 2026-04-21 14:32:20,167 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\models.py changed, reloading.
+INFO | 2026-04-21 14:32:21,747 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-21 14:32:30,376 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\models.py changed, reloading.
+INFO | 2026-04-21 14:32:31,535 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-21 14:32:35,006 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\models.py changed, reloading.
+INFO | 2026-04-21 14:32:36,229 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-21 14:32:37,674 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\models.py changed, reloading.
+INFO | 2026-04-21 14:32:38,915 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-21 14:32:40,489 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\models.py changed, reloading.
+INFO | 2026-04-21 14:32:41,656 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-21 14:32:43,146 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\models.py changed, reloading.
+INFO | 2026-04-21 14:32:44,407 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-21 14:32:46,854 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\models.py changed, reloading.
+INFO | 2026-04-21 14:32:48,088 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-21 14:33:45,009 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-21 14:33:52,935 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22711
+WARNING | 2026-04-21 14:33:53,064 | log | Not Found: /jobseeker/profile/
+WARNING | 2026-04-21 14:33:53,065 | log | "GET /jobseeker/profile/ HTTP/1.1" 404 31
+INFO | 2026-04-21 14:34:08,258 | log | "POST /jobseeker/profile/ HTTP/1.1" 201 337
+INFO | 2026-04-21 14:36:21,180 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 396
+INFO | 2026-04-21 14:47:42,706 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 562
+INFO | 2026-04-21 14:49:20,903 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 396
+INFO | 2026-04-21 14:49:42,061 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 396
+INFO | 2026-04-21 14:49:53,372 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 396
+INFO | 2026-04-21 14:50:58,833 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 526
+INFO | 2026-04-21 14:54:20,296 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 672
+INFO | 2026-04-23 09:47:59,074 | autoreload | Watching for file changes with StatReloader
+WARNING | 2026-04-23 09:48:09,503 | log | Not Found: /
+WARNING | 2026-04-23 09:48:09,504 | log | "GET / HTTP/1.1" 404 2313
+INFO | 2026-04-23 09:48:35,305 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22711
+INFO | 2026-04-23 09:48:36,176 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 622
+WARNING | 2026-04-23 09:55:17,437 | log | Bad Request: /jobseeker/profile/
+WARNING | 2026-04-23 09:55:17,452 | log | "POST /jobseeker/profile/ HTTP/1.1" 400 34
+WARNING | 2026-04-23 09:55:28,620 | log | Bad Request: /jobseeker/profile/
+WARNING | 2026-04-23 09:55:28,623 | log | "POST /jobseeker/profile/ HTTP/1.1" 400 34
+WARNING | 2026-04-23 09:55:35,875 | log | Bad Request: /jobseeker/profile/
+WARNING | 2026-04-23 09:55:35,877 | log | "POST /jobseeker/profile/ HTTP/1.1" 400 34
+WARNING | 2026-04-23 09:56:04,236 | log | Bad Request: /jobseeker/profile/
+WARNING | 2026-04-23 09:56:04,238 | log | "POST /jobseeker/profile/ HTTP/1.1" 400 34
+INFO | 2026-04-23 09:56:48,075 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22711
+INFO | 2026-04-23 09:56:48,456 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 622
+WARNING | 2026-04-23 09:57:07,948 | log | Bad Request: /jobseeker/profile/
+WARNING | 2026-04-23 09:57:07,949 | log | "POST /jobseeker/profile/ HTTP/1.1" 400 34
+INFO | 2026-04-23 09:57:16,082 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22711
+INFO | 2026-04-23 09:57:16,262 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 622
+WARNING | 2026-04-23 09:58:01,144 | log | Bad Request: /jobseeker/profile/
+WARNING | 2026-04-23 09:58:01,145 | log | "POST /jobseeker/profile/ HTTP/1.1" 400 34
+INFO | 2026-04-23 10:02:43,287 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22711
+INFO | 2026-04-23 10:02:43,467 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 622
+WARNING | 2026-04-23 10:05:37,763 | log | Bad Request: /jobseeker/profile/
+WARNING | 2026-04-23 10:05:37,765 | log | "POST /jobseeker/profile/ HTTP/1.1" 400 34
+INFO | 2026-04-23 10:06:07,891 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22711
+INFO | 2026-04-23 10:06:08,088 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 622
+WARNING | 2026-04-23 10:07:31,744 | log | Bad Request: /jobseeker/profile/
+WARNING | 2026-04-23 10:07:31,747 | log | "POST /jobseeker/profile/ HTTP/1.1" 400 34
+INFO | 2026-04-23 11:39:17,600 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22711
+INFO | 2026-04-23 11:39:17,869 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 622
+WARNING | 2026-04-23 11:39:50,503 | log | Bad Request: /jobseeker/profile/
+WARNING | 2026-04-23 11:39:50,503 | log | "POST /jobseeker/profile/ HTTP/1.1" 400 34
+INFO | 2026-04-23 12:00:00,993 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-23 12:00:03,274 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-23 12:01:30,880 | autoreload | Watching for file changes with StatReloader
+WARNING | 2026-04-23 12:01:34,273 | log | Not Found: /
+WARNING | 2026-04-23 12:01:34,274 | log | "GET / HTTP/1.1" 404 2313
+INFO | 2026-04-23 12:01:37,671 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22711
+INFO | 2026-04-23 12:01:37,903 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 622
+INFO | 2026-04-23 12:02:00,828 | log | "POST /jobseeker/profile/ HTTP/1.1" 201 315
+INFO | 2026-04-23 12:02:15,862 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 315
+INFO | 2026-04-23 12:33:35,078 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 312
+INFO | 2026-04-23 12:59:09,935 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 312
+INFO | 2026-04-23 14:37:16,325 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 312
+WARNING | 2026-04-23 14:37:45,143 | log | Not Found: /
+WARNING | 2026-04-23 14:37:45,145 | log | "GET / HTTP/1.1" 404 2313
+INFO | 2026-04-23 14:40:18,667 | autoreload | Watching for file changes with StatReloader
+WARNING | 2026-04-23 14:40:20,773 | log | Not Found: /
+WARNING | 2026-04-23 14:40:20,775 | log | "GET / HTTP/1.1" 404 2313
+INFO | 2026-04-23 14:40:34,043 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22711
+INFO | 2026-04-23 14:40:34,558 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 262
+INFO | 2026-04-23 14:41:51,781 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 312
+INFO | 2026-04-23 14:44:28,818 | autoreload | Watching for file changes with StatReloader
+WARNING | 2026-04-23 14:44:58,303 | log | Not Found: /
+WARNING | 2026-04-23 14:44:58,304 | log | "GET / HTTP/1.1" 404 2313
+INFO | 2026-04-23 14:45:17,826 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22740
+INFO | 2026-04-23 14:45:18,174 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 262
+INFO | 2026-04-24 09:28:17,284 | autoreload | Watching for file changes with StatReloader
+WARNING | 2026-04-24 09:28:25,427 | log | Not Found: /
+WARNING | 2026-04-24 09:28:25,427 | log | "GET / HTTP/1.1" 404 2313
+WARNING | 2026-04-24 09:28:25,693 | log | Not Found: /favicon.ico
+WARNING | 2026-04-24 09:28:25,694 | log | "GET /favicon.ico HTTP/1.1" 404 2364
+ERROR | 2026-04-24 09:28:35,004 | log | Internal Server Error: /jobseeker/profile/
+Traceback (most recent call last):
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\core\handlers\base.py", line 221, in _get_response
+    response = response.render()
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\template\response.py", line 114, in render
+    self.content = self.rendered_content
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\rest_framework\response.py", line 74, in rendered_content
+    ret = renderer.render(self.data, accepted_media_type, context)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\rest_framework\renderers.py", line 749, in render
+    template = loader.get_template(self.template)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: rest_framework/api.html
+ERROR | 2026-04-24 09:28:35,010 | log | "GET /jobseeker/profile/ HTTP/1.1" 500 87656
+INFO | 2026-04-24 09:28:43,856 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22740
+INFO | 2026-04-24 09:28:44,267 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 262
+INFO | 2026-04-24 09:29:19,014 | log | "POST /jobseeker/profile/ HTTP/1.1" 201 311
+INFO | 2026-04-24 09:47:35,661 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 311
+INFO | 2026-04-24 09:48:04,857 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 09:48:08,622 | autoreload | Watching for file changes with StatReloader
+WARNING | 2026-04-24 09:48:11,036 | log | Not Found: /
+WARNING | 2026-04-24 09:48:11,037 | log | "GET / HTTP/1.1" 404 2313
+INFO | 2026-04-24 09:48:25,959 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22740
+INFO | 2026-04-24 09:48:26,196 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 261
+WARNING | 2026-04-24 09:48:55,298 | log | Bad Request: /jobseeker/profile/
+WARNING | 2026-04-24 09:48:55,299 | log | "POST /jobseeker/profile/ HTTP/1.1" 400 34
+WARNING | 2026-04-24 09:49:05,308 | log | Bad Request: /jobseeker/profile/
+WARNING | 2026-04-24 09:49:05,309 | log | "POST /jobseeker/profile/ HTTP/1.1" 400 34
+WARNING | 2026-04-24 09:51:22,567 | log | Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING | 2026-04-24 09:51:22,568 | log | "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 2475
+INFO | 2026-04-24 09:51:28,511 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22740
+WARNING | 2026-04-24 09:51:28,559 | log | Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING | 2026-04-24 09:51:28,559 | log | "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 2475
+INFO | 2026-04-24 09:51:28,687 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 261
+WARNING | 2026-04-24 09:51:54,447 | log | Bad Request: /jobseeker/profile/
+WARNING | 2026-04-24 09:51:54,447 | log | "POST /jobseeker/profile/ HTTP/1.1" 400 34
+INFO | 2026-04-24 09:56:45,365 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 3523
+WARNING | 2026-04-24 09:56:45,412 | log | Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING | 2026-04-24 09:56:45,413 | log | "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 2475
+INFO | 2026-04-24 09:56:53,545 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 3523
+INFO | 2026-04-24 09:57:43,306 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 09:57:46,623 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 3523
+INFO | 2026-04-24 09:57:47,500 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 3523
+INFO | 2026-04-24 09:59:04,559 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22740
+INFO | 2026-04-24 09:59:04,849 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 261
+INFO | 2026-04-24 10:11:37,997 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:11:41,143 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:11:49,101 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:11:51,623 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:11:53,940 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:11:55,890 | autoreload | Watching for file changes with StatReloader
+ERROR | 2026-04-24 10:12:05,029 | log | Internal Server Error: /jobseeker/profile_create/
+Traceback (most recent call last):
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py", line 17, in profile
+    return render(request, 'profile.html')
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: profile.html
+ERROR | 2026-04-24 10:12:05,040 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 500 85674
+INFO | 2026-04-24 10:13:19,740 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:13:22,140 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:13:44,978 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:13:47,072 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:13:48,496 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:13:50,561 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:14:09,628 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:14:11,845 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:14:20,757 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:14:23,085 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:14:39,016 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22740
+INFO | 2026-04-24 10:14:39,308 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 261
+INFO | 2026-04-24 10:14:55,831 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:14:58,385 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:15:05,202 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:15:07,152 | autoreload | Watching for file changes with StatReloader
+ERROR | 2026-04-24 10:15:07,678 | log | Internal Server Error: /jobseeker/profile_create/
+Traceback (most recent call last):
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py", line 149, in profile
+    return render(request, 'profile.html')
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\sachin.s\Desktop\Job_Portel\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: profile.html
+ERROR | 2026-04-24 10:15:07,686 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 500 85680
+INFO | 2026-04-24 10:15:13,844 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:15:16,146 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:15:17,835 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:15:20,214 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:16:27,259 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:16:29,680 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:16:34,426 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:16:36,807 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:17:14,558 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:17:17,143 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:17:18,665 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:17:20,967 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:17:22,700 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:17:25,214 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:17:48,260 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:17:49,363 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22740
+WARNING | 2026-04-24 10:17:49,577 | log | Forbidden: /jobseeker/profile/
+WARNING | 2026-04-24 10:17:49,578 | log | "GET /jobseeker/profile/ HTTP/1.1" 403 58
+WARNING | 2026-04-24 10:18:07,759 | log | Forbidden: /jobseeker/profile/
+WARNING | 2026-04-24 10:18:07,761 | log | "POST /jobseeker/profile/ HTTP/1.1" 403 58
+WARNING | 2026-04-24 10:19:28,296 | log | Not Found: /jobseeker/admin
+WARNING | 2026-04-24 10:19:28,298 | log | "GET /jobseeker/admin HTTP/1.1" 404 2781
+INFO | 2026-04-24 10:19:36,187 | log | "GET /admin HTTP/1.1" 301 0
+INFO | 2026-04-24 10:19:36,216 | log | "GET /admin/ HTTP/1.1" 302 0
+INFO | 2026-04-24 10:19:36,476 | log | "GET /admin/login/?next=/admin/ HTTP/1.1" 200 4080
+INFO | 2026-04-24 10:19:37,462 | log | "GET /static/admin/css/base.css HTTP/1.1" 200 23100
+INFO | 2026-04-24 10:19:37,484 | log | "GET /static/admin/css/responsive.css HTTP/1.1" 200 16273
+INFO | 2026-04-24 10:19:37,519 | log | "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 200 2810
+INFO | 2026-04-24 10:19:37,539 | log | "GET /static/admin/css/login.css HTTP/1.1" 200 951
+INFO | 2026-04-24 10:19:37,541 | log | "GET /static/admin/js/theme.js HTTP/1.1" 200 1653
+INFO | 2026-04-24 10:19:37,548 | log | "GET /static/admin/css/dark_mode.css HTTP/1.1" 200 3538
+INFO | 2026-04-24 10:19:37,577 | log | "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 200 3063
+INFO | 2026-04-24 10:19:43,711 | log | "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4260
+INFO | 2026-04-24 10:20:00,355 | log | "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4260
+INFO | 2026-04-24 10:20:03,209 | log | "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4260
+INFO | 2026-04-24 10:20:11,831 | log | "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4260
+INFO | 2026-04-24 10:20:20,110 | log | "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4260
+INFO | 2026-04-24 10:20:23,552 | log | "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4260
+INFO | 2026-04-24 10:21:58,460 | log | "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4256
+INFO | 2026-04-24 10:22:13,195 | log | "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4256
+INFO | 2026-04-24 10:23:30,244 | log | "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4257
+INFO | 2026-04-24 10:23:45,860 | log | "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4258
+WARNING | 2026-04-24 10:24:57,568 | log | Not Found: /accounts/login/
+WARNING | 2026-04-24 10:24:57,570 | log | "GET /accounts/login/ HTTP/1.1" 404 2376
+INFO | 2026-04-24 10:45:59,625 | log | "GET /admin/ HTTP/1.1" 302 0
+INFO | 2026-04-24 10:45:59,669 | log | "GET /admin/login/?next=/admin/ HTTP/1.1" 200 4080
+INFO | 2026-04-24 10:46:12,589 | log | "POST /admin/login/?next=/admin/ HTTP/1.1" 302 0
+INFO | 2026-04-24 10:46:12,701 | log | "GET /admin/ HTTP/1.1" 200 6023
+INFO | 2026-04-24 10:46:12,761 | log | "GET /static/admin/css/dashboard.css HTTP/1.1" 200 441
+INFO | 2026-04-24 10:46:12,798 | log | "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 200 978
+INFO | 2026-04-24 10:46:12,799 | log | "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 200 593
+INFO | 2026-04-24 10:46:53,409 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22740
+WARNING | 2026-04-24 10:46:53,762 | log | Forbidden: /jobseeker/profile/
+WARNING | 2026-04-24 10:46:53,764 | log | "GET /jobseeker/profile/ HTTP/1.1" 403 54
+WARNING | 2026-04-24 10:47:16,916 | log | Forbidden: /jobseeker/profile/
+WARNING | 2026-04-24 10:47:16,918 | log | "POST /jobseeker/profile/ HTTP/1.1" 403 54
+INFO | 2026-04-24 10:51:11,489 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:51:14,648 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:51:30,055 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:51:32,332 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:51:38,972 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:51:41,148 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:51:45,461 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 10:51:47,475 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:52:15,114 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 10:52:20,096 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22740
+WARNING | 2026-04-24 10:52:20,377 | log | Not Found: /jobseeker/profile/
+WARNING | 2026-04-24 10:52:20,377 | log | "GET /jobseeker/profile/ HTTP/1.1" 404 46
+INFO | 2026-04-24 10:52:37,601 | log | "POST /jobseeker/profile/ HTTP/1.1" 201 310
+INFO | 2026-04-24 10:52:45,252 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 311
+INFO | 2026-04-24 10:52:59,902 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 311
+INFO | 2026-04-24 10:53:22,760 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 312
+INFO | 2026-04-24 11:03:02,600 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 18973
+INFO | 2026-04-24 11:03:02,831 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 284
+INFO | 2026-04-24 11:03:18,928 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 313
+INFO | 2026-04-24 11:03:25,140 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 313
+INFO | 2026-04-24 11:03:56,275 | log | "PATCH /jobseeker/profile/ HTTP/1.1" 200 324
+INFO | 2026-04-24 11:11:06,863 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 13633
+INFO | 2026-04-24 11:11:07,165 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 296
+INFO | 2026-04-24 11:11:25,301 | log | "POST /jobseeker/profile/ HTTP/1.1" 200 312
+INFO | 2026-04-24 11:12:25,746 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 11:12:28,704 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 11:12:42,315 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 11:12:44,431 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 11:12:47,996 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 13633
+INFO | 2026-04-24 11:12:48,302 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 285
+INFO | 2026-04-24 11:13:02,912 | log | "POST /jobseeker/profile/ HTTP/1.1" 200 312
+INFO | 2026-04-24 11:13:39,807 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 11:13:42,084 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 11:13:49,606 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 11:13:51,970 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 11:14:42,690 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 11:14:44,812 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 11:14:51,432 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 11:14:53,801 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 11:15:00,211 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 11:15:02,497 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 11:15:06,185 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 11:15:08,354 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 11:15:10,279 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 13633
+INFO | 2026-04-24 11:15:10,502 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 285
+INFO | 2026-04-24 11:15:22,266 | log | "POST /jobseeker/profile/ HTTP/1.1" 200 302
+INFO | 2026-04-24 11:16:18,775 | log | "POST /jobseeker/profile/ HTTP/1.1" 200 340
+INFO | 2026-04-24 11:17:09,288 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 11:17:11,590 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 11:17:14,498 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22740
+INFO | 2026-04-24 11:17:14,732 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 261
+WARNING | 2026-04-24 11:17:30,020 | log | Bad Request: /jobseeker/profile/
+WARNING | 2026-04-24 11:17:30,022 | log | "POST /jobseeker/profile/ HTTP/1.1" 400 34
+INFO | 2026-04-24 11:27:40,382 | log | "GET /admin/auth/user/ HTTP/1.1" 200 13022
+INFO | 2026-04-24 11:27:41,441 | log | "GET /static/admin/js/core.js HTTP/1.1" 200 6208
+INFO | 2026-04-24 11:27:41,465 | log | "GET /static/admin/css/changelists.css HTTP/1.1" 200 7498
+INFO | 2026-04-24 11:27:41,483 | log | "GET /static/admin/js/jquery.init.js HTTP/1.1" 200 347
+INFO | 2026-04-24 11:27:41,486 | log | "GET /static/admin/js/urlify.js HTTP/1.1" 200 7887
+INFO | 2026-04-24 11:27:41,515 | log | "GET /static/admin/js/prepopulate.js HTTP/1.1" 200 1531
+INFO | 2026-04-24 11:27:41,516 | log | "GET /static/admin/js/actions.js HTTP/1.1" 200 8076
+INFO | 2026-04-24 11:27:41,520 | log | "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO | 2026-04-24 11:27:41,528 | log | "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 200 9777
+INFO | 2026-04-24 11:27:41,538 | log | "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 200 285314
+INFO | 2026-04-24 11:27:41,542 | log | "GET /static/admin/img/search.svg HTTP/1.1" 200 607
+INFO | 2026-04-24 11:27:41,543 | log | "GET /static/admin/img/icon-no.svg HTTP/1.1" 200 645
+INFO | 2026-04-24 11:27:41,562 | log | "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 200 325171
+INFO | 2026-04-24 11:27:41,566 | log | "GET /static/admin/img/icon-yes.svg HTTP/1.1" 200 558
+INFO | 2026-04-24 11:27:42,082 | log | "GET /static/admin/js/filters.js HTTP/1.1" 200 978
+INFO | 2026-04-24 11:27:42,136 | log | "GET /static/admin/img/tooltag-add.svg HTTP/1.1" 200 593
+INFO | 2026-04-24 11:27:42,138 | log | "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 200 928
+INFO | 2026-04-24 11:27:42,139 | log | "GET /static/admin/img/sorting-icons.svg HTTP/1.1" 200 1761
+INFO | 2026-04-24 11:29:11,708 | autoreload | C:\Users\sachin.s\Desktop\Job_Portel\jobseeker\views.py changed, reloading.
+INFO | 2026-04-24 11:29:14,388 | autoreload | Watching for file changes with StatReloader
+INFO | 2026-04-24 11:29:23,512 | log | "GET /jobseeker/profile_create/ HTTP/1.1" 200 22740
+INFO | 2026-04-24 11:29:23,778 | log | "GET /jobseeker/profile/ HTTP/1.1" 200 261
+INFO | 2026-04-24 11:29:41,840 | log | "POST /jobseeker/profile/ HTTP/1.1" 201 310
