@@ -69,9 +69,7 @@ class JobSeekerProfileSerializer(serializers.ModelSerializer):
         experiences_data = validated_data.pop('experiences', [])
         locations_data = validated_data.pop('locations', [])
 
-        user = self.context['request'].user
-
-        profile = JobSeekerProfile.objects.create(user=user, **validated_data)
+        profile = JobSeekerProfile.objects.create(**validated_data)
 
         # Skills
         for skill in skills_data:
@@ -92,7 +90,7 @@ class JobSeekerProfileSerializer(serializers.ModelSerializer):
         return profile
 
     def update(self, instance, validated_data):
-        skills_data = validated_data.pop('skills', [])
+        skills_data = validated_data.pop('skills', None)
         educations_data = validated_data.pop('educations', [])
         experiences_data = validated_data.pop('experiences', [])
         locations_data = validated_data.pop('locations', [])

@@ -1,38 +1,91 @@
-    {% load static %}
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>{% block title %}JobPortal{% endblock %}</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        <style>
-            body { background-color: #0f172a; color: white; font-family: sans-serif; }
-            .card-style { background-color: #1e293b; border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #334155; }
-            
-            /* FORCING TEXT VISIBILITY: Dark background with Pure White Text */
-            .input-style { 
-                width: 100%; 
-                padding: 12px; 
-                border-radius: 12px; 
-                background-color: #0f172a !important; 
-                color: #ffffff !important; 
-                border: 1px solid #475569;
-                outline: none;
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}JobPortal{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+    body { 
+        background-color: #f8fafc;   /* light background */
+        color: #0f172a;              /* dark text */
+        font-family: sans-serif;
+    }
+
+    .card-style {
+        background-color: #ffffff;   /* white cards */
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .input-style {
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5f5;
+        outline: none;
+    }
+
+    .input-style::placeholder {
+        color: #94a3b8;
+    }
+
+    .input-style:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 1px #3b82f6;
+    }
+
+    .label-style {
+        font-size: 11px;
+        font-weight: bold;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        display: block;
+    }
+    </style>
+</head>
+
+<body>
+    <header class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <div class="bg-blue-600 w-8 h-8 rounded text-center font-bold">J</div>
+            <span class="font-bold uppercase tracking-tight">JobPortal</span>
+        </div>
+    </header>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- CSRF helper -->
+    <script>
+    function getCSRFToken() {
+        let cookieValue = null;
+        let name = 'csrftoken';
+
+        if (document.cookie && document.cookie !== '') {
+            let cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
             }
-            .input-style::placeholder { color: #64748b; }
-            .label-style { font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; display: block; }
-        </style>
-    </head>
-    <body>
-        <header class="p-4 border-b border-slate-800 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <div class="bg-blue-600 w-8 h-8 rounded text-center font-bold">J</div>
-                <span class="font-bold uppercase tracking-tight">JobPortal</span>
-            </div>
-        </header>
-        <main class="p-8">
-            {% block content %}{% endblock %}
-        </main>
-    </body>
-    </html>
+        }
+        return cookieValue;
+    }
+    </script>
+
+</body>
+</html>
