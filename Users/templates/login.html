@@ -187,7 +187,7 @@ loginForm.onsubmit = async (e) => {
                 'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({
-                username: document.getElementById('id_email').value,
+                user_email: document.getElementById('id_email').value,
                 password: document.getElementById('id_password').value
             }),
             credentials: 'same-origin'

@@ -10,25 +10,33 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
-from pathlib import Path
-import os
 
+#-----------------------------------------------
+import os
+from pathlib import Path
+from datetime import timedelta
+import environ # pip install django-environ
+
+env = environ.Env() # Initialize environment variables .env file handler
+#-----------------------------------------------
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+environ.Env.read_env(os.path.join(BASE_DIR, '.env')) # Load environment variables from .env file
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$n5s^$dm536x61=2gflc&sn5e0o%4pm$17+3f9%2(#xflat+&t'
+SECRET_KEY = env('SECRET_KEY') #
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG') #
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -42,6 +50,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'axes',
+    'django_redis',# Caching
     'Users',
 ]
 
@@ -52,8 +61,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'axes.middleware.AxesMiddleware',
     'JobPortel.middleware.SilentTokenRefreshMiddleware',
+    'axes.middleware.AxesMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     
@@ -64,8 +73,7 @@ ROOT_URLCONF = 'JobPortel.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # Use a project-level templates directory plus app directories
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Template directory
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -84,12 +92,19 @@ WSGI_APPLICATION = 'JobPortel.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+#-----------------------------------------------------------------
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+]
+#-----------------------------------------------------------------
 
 
 # Password validation
@@ -101,12 +116,16 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 8},#
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+    {
+        'NAME': 'Users.validators.CustomPasswordValidator',#
     },
 ]
 
@@ -130,6 +149,14 @@ STATIC_URL = 'static/'
 
 # simple jwt settings
 REST_FRAMEWORK = {
+    # ddos attack prevention
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '50/min',
+    },
+    # Authentication and permissions
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'Users.authentication.CustomJWTAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -139,11 +166,9 @@ REST_FRAMEWORK = {
     ),
 }
 
-from datetime import timedelta
-
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(minutes=2),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'AUTH_COOKIE': 'access_token',
     # Cookie name for refresh token
     'AUTH_COOKIE_REFRESH': 'refresh_token',
@@ -155,6 +180,8 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_PATH': '/',
     # CSRF protection
     'AUTH_COOKIE_SAMESITE': 'Lax',
+    # If your PK is 'user_id', change this to 'user_id'
+    'USER_ID_FIELD': 'user_id',
 }
 
 AUTHENTICATION_BACKENDS = [
@@ -181,6 +208,27 @@ AXES_LOCKOUT_URL = '/users/locked/'
 
 
 LOG_DIR = os.path.join(BASE_DIR, 'logs')
+#----------------------------------------------------------------------------------------
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '50/min',
+    }
+}                                                  
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'Users.Users'
+
+# Logging Configuration
+
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
@@ -199,6 +247,12 @@ LOGGING = {
             'filename': os.path.join(LOG_DIR, 'users_activity.log'),
             'formatter': 'standard',
         },
+        'refresh_file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOG_DIR, 'silent_refresh.log'),
+            'formatter': 'standard',
+        },
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
@@ -211,5 +265,40 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'silent_refresh': {
+            'handlers': ['refresh_file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
     },
 }
+
+ # email backend settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env('EMAIL_HOST')
+EMAIL_PORT = env.int('EMAIL_PORT')
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS')
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
+
+
+# Redis Cache settings and Celery Broker settings
+REDIS_URL = env('REDIS_URL')
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"{REDIS_URL}/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# Celery Broker
+CELERY_BROKER_URL = f"{REDIS_URL}/0"
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+#---------------------------------------------------------------------------------------

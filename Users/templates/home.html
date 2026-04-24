@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Home - JobPortel{% endblock %}
+
+{% block content %}
+  <h2>User Dashboard</h2>
+  <div id="content">
+    <p>Loading user info...</p>
+  </div>
+
+  <script>
+    // 1. Helper to grab the CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // 2. Optimized Fetch for Middleware-based Auth
+    async function authFetch(url, options = {}) {
+        options.credentials = 'same-origin'; // Vital to send/receive cookies
+        
+        options.headers = {
+            ...options.headers,
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        };
+
+        const response = await fetch(url, options);
+
+        // If Middleware failed to refresh or session is dead
+        if (response.status === 401 || response.status === 403) {
+            console.error("Authorization failed. Redirecting to login...");
+            return;
+        }
+
+        return response;
+    }
+
+    // 3. Main function to load data
+    async function loadUser() {
+        const container = document.getElementById('content');
+        
+        try {
+            // Note: Use absolute path starting with /
+            const res = await authFetch('/users/details/');
+            
+            if (res && res.ok) {
+                const data = await res.json();
+                
+                // Inject the UI
+                container.innerHTML = `
+                    <p>Welcome, <strong id="user-display"></strong></p>
+                    <ul>
+                        <li><strong>Username:</strong> <span id="u-name"></span></li>
+                        <li><strong>Email:</strong> <span id="u-id"></span></li>
+                        <li><strong>Role:</strong> <span id="u-role"></span></li>
+                    </ul>
+                    <p><button id="logout-btn" style="color: red;">Log out</button></p>
+                `;
+
+                // Safe text injection
+                document.getElementById('user-display').textContent = data.user_email;
+                document.getElementById('u-name').textContent = data.user_email;
+                document.getElementById('u-id').textContent = data.user_id;
+                document.getElementById('u-role').textContent = data.role;
+
+                // Handle Logout click
+                document.getElementById('logout-btn').addEventListener('click', async () => {
+                    const logoutRes = await authFetch('/users/logout/', { method: 'POST' });
+                    if (logoutRes.ok) {
+                        window.location.href = '/users/login/';
+                    }
+                });
+
+            } else {
+                container.innerHTML = '<p>Session invalid. <a href="/users/login/">Please Login</a></p>';
+            }
+        } catch (err) {
+            console.error("Fetch error:", err);
+            container.innerText = 'Error connecting to server. Check console for details.';
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', loadUser);
+  </script>
+{% endblock %}

@@ -1,4 +1,11 @@
-venv
+venv/
 db.sqlite3
 __pycache__/
-logs
+logs/
+old.py
+steps for code running.txt
+gitpull.txt
+.env
+.vscode/
+.idea/
+.DS_Store
