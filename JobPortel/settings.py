@@ -16,7 +16,6 @@ import os
 from pathlib import Path
 from datetime import timedelta
 import environ # pip install django-environ
-import dj_database_url
 
 env = environ.Env() # Initialize environment variables .env file handler
 #-----------------------------------------------
