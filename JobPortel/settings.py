@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
+from datetime import timedelta
 
 from pathlib import Path
 
@@ -27,7 +28,19 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+}
 
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+
+    # 🔥 THIS IS THE FIX
+    "USER_ID_FIELD": "user_id",
+    "USER_ID_CLAIM": "user_id",
+}
 # Application definition
 
 INSTALLED_APPS = [
@@ -37,7 +50,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'Users',
+    'user',
+    "rest_framework",
 ]
 
 MIDDLEWARE = [
@@ -69,6 +83,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'JobPortel.wsgi.application'
 
+AUTH_USER_MODEL = "user.Users"
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
@@ -79,6 +94,7 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
 
 
 # Password validation

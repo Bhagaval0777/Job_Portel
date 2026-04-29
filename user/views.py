@@ -6,36 +6,58 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 from .models import RolePermission
-from .permissions import IsAdmin
+from rest_framework.permissions import IsAdminUser
+
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
 
 logger = logging.getLogger(__name__)
 
+class UserLogin(APIView):
+    def post(self, request):
+        email = request.data.get("user_email")
+        password = request.data.get("password")
 
+        user = authenticate(username=email, password=password)
+
+        if user is None:
+            return Response({"error": "Invalid credentials"}, status=401)
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            "access": str(refresh.access_token),
+        })
 class RoleAccessView(APIView):
 
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        role = getattr(user, "role", None)
 
-        if not role:
-            return Response(
-                {"error": "User has no role assigned."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        if role == "admin":
+        # ✅ 1. ADMIN FIRST
+        if user.is_staff:
             permissions = self._admin_full_access()
+            role = None  # optional, just for response
+
         else:
+            # ✅ 2. THEN role-based logic
+            role = getattr(user, "role", None)
+
+            if not role:
+                return Response(
+                    {"error": "user has no role assigned."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
             permissions = self._get_permissions_from_db(role)
 
         logger.info("ROLE_ACCESS | user=%s | role=%s", user.user_id, role)
 
         return Response({
-            "user_id":     user.user_id,
-            "email":       user.user_email,
-            "role":        role,
+            "user_id": user.user_id,
+            "email": user.user_email,
+            "role": role,
             "permissions": permissions,
         }, status=status.HTTP_200_OK)
 
@@ -55,7 +77,7 @@ class RoleAccessView(APIView):
 
         resources = [
             "jobs", "resume", "applications",
-            "users", "company", "messages",
+            "user", "company", "messages",
             "notifications", "subscriptions"
         ]
         return {
@@ -66,7 +88,7 @@ class RoleAccessView(APIView):
 
 class RolePermissionListView(APIView):
 
-    permission_classes = [IsAdmin]
+    permission_classes = [IsAdminUser]
 
     def get(self, request):
         rows = RolePermission.objects.all()
@@ -86,7 +108,7 @@ class RolePermissionListView(APIView):
 
 class RolePermissionUpdateView(APIView):
 
-    permission_classes = [IsAdmin]
+    permission_classes = [IsAdminUser]
 
     def patch(self, request, pk):
         try:

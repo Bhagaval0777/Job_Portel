@@ -15,13 +15,16 @@ class UserManager(BaseUserManager):
     def create_superuser(self, user_email, password=None, **extra_fields):
         extra_fields.setdefault('is_active', True)
         extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('role', 'admin')   # ← ensures admin role on createsuperuser
         return self.create_user(user_email, password, **extra_fields)
 
 
 class Users(AbstractBaseUser, PermissionsMixin):
+
+    @property
+    def id(self):
+        return self.user_id
+
     ROLE_CHOICES = (
-        ('admin',     'Admin'),       # only via createsuperuser, never registration page
         ('jobseeker', 'JobSeeker'),
         ('recruiter', 'Recruiter'),
     )
@@ -41,7 +44,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     class Meta:
-        db_table = "users"
+        db_table = "user"
 
 
 class UserLoginDetails(models.Model):
@@ -68,7 +71,7 @@ class RolePermission(models.Model):
         ('jobs',          'Jobs'),
         ('resume',        'Resume & Documents'),
         ('applications',  'Job Applications'),
-        ('users',         'Users'),
+        ('user',         'user'),
         ('company',       'Company'),
         ('messages',      'Messages'),
         ('notifications', 'Notifications'),
@@ -92,3 +95,4 @@ class RolePermission(models.Model):
             f"{self.role} | {self.resource} | "
             f"R:{self.can_read} W:{self.can_write} D:{self.can_delete}"
         )
+

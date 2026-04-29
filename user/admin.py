@@ -1,5 +1,5 @@
 from django.contrib import admin
-from Users.models import Users, RolePermission
+from user.models import Users, RolePermission
 
 
 
