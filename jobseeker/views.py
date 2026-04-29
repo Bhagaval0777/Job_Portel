@@ -31,7 +31,7 @@ def jobseeker_dashboard_view(request):
     """
     Renders the frontend HTML dashboard for the Job Seeker.
     """
-    return render(request, 'jobseeker_dashboard.html')
+    return render(request, 'profile.html')
 
 class JobSeekerProfileView(BaseAPIView):
     throttle_classes = [BurstRateThrottle]
