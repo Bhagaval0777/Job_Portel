@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 import environ # pip install django-environ
+import dj_database_url
 
 env = environ.Env() # Initialize environment variables .env file handler
 #-----------------------------------------------
@@ -93,13 +94,18 @@ WSGI_APPLICATION = 'JobPortel.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        # IMPORTANT: The username must be "postgres.your-project-id"
+        'USER': 'postgres.hdonhoglfkadwqbmktrc',
+        'PASSWORD': 'JobPortal!123',
+        'HOST': 'aws-1-ap-south-1.pooler.supabase.com', # Use the POOLER host
+        'PORT': '5432', # Using 5432 with the pooler host provides "Session Mode"
     }
 }
+
 
 #-----------------------------------------------------------------
 PASSWORD_HASHERS = [
