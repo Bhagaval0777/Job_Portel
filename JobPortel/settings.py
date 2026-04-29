@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'axes',
     'django_redis',# Caching
     'Users',
+    'jobseeker',
 ]
 
 MIDDLEWARE = [
