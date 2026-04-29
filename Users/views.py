@@ -233,8 +233,8 @@ class LoginView(TokenObtainPairView):
                 )
 
                 # Remove tokens from body for extra security
-                response.data.pop('access', None)
-                response.data.pop('refresh', None)
+                # response.data.pop('access', None)     # hased for  testing purpose    change 60 minites to 15 minutes and remove comment for access token
+                # response.data.pop('refresh', None)
 
         return response
 

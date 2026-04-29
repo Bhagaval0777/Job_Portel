@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'axes',
     'django_redis',# Caching
     'Users',
+    'jobseeker',
 ]
 
 MIDDLEWARE = [
@@ -152,8 +153,10 @@ REST_FRAMEWORK = {
     # ddos attack prevention
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle', #
     ],
     'DEFAULT_THROTTLE_RATES': {
+        'user': '100/min',  #
         'anon': '50/min',
     },
     # Authentication and permissions
@@ -167,7 +170,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'AUTH_COOKIE': 'access_token',
     # Cookie name for refresh token
@@ -209,15 +212,6 @@ AXES_LOCKOUT_URL = '/users/locked/'
 
 LOG_DIR = os.path.join(BASE_DIR, 'logs')
 #----------------------------------------------------------------------------------------
-REST_FRAMEWORK = {
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '50/min',
-    }
-}                                                  
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -258,6 +252,12 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'standard',
         },
+        'jobseeker_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOG_DIR, 'jobseeker_activity.log'),
+            'formatter': 'standard',
+        },
     },
     'loggers': {
         'users': { 
@@ -267,6 +267,11 @@ LOGGING = {
         },
         'silent_refresh': {
             'handlers': ['refresh_file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'jobseeker': {
+            'handlers': ['jobseeker_file', 'console'],
             'level': 'DEBUG',
             'propagate': True,
         },
