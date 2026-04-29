@@ -26,7 +26,7 @@ class BaseAPIView(APIView):
         logger.error(f"Unhandled Exception: {str(exc)}")
         return custom_response(False, "Internal server error", errors=str(exc), status_code=500)
     
-@login_required
+# @login_required
 def jobseeker_dashboard_view(request):
     """
     Renders the frontend HTML dashboard for the Job Seeker.
