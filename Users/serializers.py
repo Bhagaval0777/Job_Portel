@@ -1,7 +1,8 @@
-from re import match
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+
 from .models import Users
 
 class LoginSerializer(serializers.Serializer):
@@ -35,17 +36,37 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    confirm_password = serializers.CharField(write_only=True)
 
     class Meta:
         model = Users
-        fields = ["user_email", "password", "confirm_password", "role"]
+        fields = ["user_email", "password", "role"]
 
     def validate(self, data):
         validate_password(data["password"])
         return data
 
     def create(self, validated_data):
-        validated_data.pop("confirm_password")
+        return Users.objects.create(**validated_data)
 
-        return Users.objects.create_user(**validated_data)
+class SetNewPasswordSerializer(serializers.Serializer):
+    verify_token = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        password = data.get("password")
+        confirm_password = data.get("confirm_password")
+
+        if password != confirm_password:
+            raise serializers.ValidationError({
+                "confirm_password": "Passwords do not match."
+            })
+
+        try:
+            validate_password(password)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({
+                "password": list(e.messages)
+            })
+
+        return data

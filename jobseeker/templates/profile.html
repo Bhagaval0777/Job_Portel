@@ -4,8 +4,6 @@
 {% block content %}
 <div class="max-w-7xl mx-auto space-y-6">
 
-    <h1 class="text-3xl font-bold">Profile Dashboard</h1>
-
     <!-- ALERTS -->
     <div id="error-banner" class="hidden p-3 bg-red-100 text-red-700 rounded"></div>
     <div id="success-banner" class="hidden p-3 bg-green-100 text-green-700 rounded"></div>
@@ -13,82 +11,320 @@
     <form id="profileForm">
         {% csrf_token %}
 
-        <!-- PERSONAL -->
-        <div class="card">
-            <h2 class="title">Personal Info</h2>
+        <!-- MAIN LAYOUT -->
+        <div class="profile-layout">
 
-            <input name="full_name" placeholder="Full Name" class="input">
-            <input name="phone_number" placeholder="Phone Number" class="input">
-            <input name="headline" placeholder="Headline" class="input">
-            <textarea name="bio" placeholder="Bio" class="input"></textarea>
+            <!-- LEFT SIDE -->
+            <div class="left-column">
+                <div class="card sticky-card">
+                    <h2 class="title">Personal Info</h2>
 
-            <div class="flex gap-4">
-                <label><input type="radio" name="gender" value="male"> Male</label>
-                <label><input type="radio" name="gender" value="female"> Female</label>
-                <label><input type="radio" name="gender" value="other"> Other</label>
+                    <input name="full_name" placeholder="Full Name" class="input">
+                    <input name="phone_number" placeholder="Phone Number" class="input">
+                    <input name="headline" placeholder="Headline" class="input">
+                    <textarea name="bio" placeholder="Bio" class="input"></textarea>
+
+                    <div class="flex gap-4 gender-group">
+                        <label><input type="radio" name="gender" value="male"> Male</label>
+                        <label><input type="radio" name="gender" value="female"> Female</label>
+                        <label><input type="radio" name="gender" value="other"> Other</label>
+                    </div>
+
+                    <button class="btn-save">Save Profile</button>
+                </div>
             </div>
 
-            <button class="btn-save">Save Profile</button>
-        </div>
+            <!-- RIGHT SIDE -->
+            <div class="right-column">
 
-        <!-- SKILLS -->
-        <div class="card">
-            <div class="flex justify-between">
-                <h2 class="title">Skills</h2>
-                <button type="button" onclick="addSkill()" class="btn-add">+ Add</button>
-            </div>
-            <div id="skills-container"></div>
-        </div>
+                <!-- SKILLS -->
+                <div class="card">
+                    <div class="flex justify-between items-center">
+                        <h2 class="title">Skills</h2>
+                        <button type="button" onclick="addSkill()" class="btn-add">+ Add</button>
+                    </div>
+                    <div id="skills-container"></div>
+                </div>
 
-        <!-- LOCATION -->
-        <div class="card">
-            <div class="flex justify-between">
-                <h2 class="title">Locations</h2>
-                <button type="button" onclick="addLocation()" class="btn-add">+ Add</button>
-            </div>
-            <div id="locations-container"></div>
-        </div>
+                <!-- LOCATIONS -->
+                <div class="card">
+                    <div class="flex justify-between items-center">
+                        <h2 class="title">Locations</h2>
+                        <button type="button" onclick="addLocation()" class="btn-add">+ Add</button>
+                    </div>
+                    <div id="locations-container"></div>
+                </div>
 
-        <!-- EXPERIENCE -->
-        <div class="card">
-            <div class="flex justify-between">
-                <h2 class="title">Experience</h2>
-                <button type="button" onclick="addExperience()" class="btn-add">+ Add</button>
-            </div>
-            <div id="experience-container"></div>
-        </div>
+                <!-- EXPERIENCE -->
+<div class="card">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="title">Experience</h2>
+        <button type="button"
+                class="btn-add"
+                onclick="addExperience()">
+            + Add
+        </button>
+    </div>
 
-        <!-- EDUCATION -->
-        <div class="card">
-            <div class="flex justify-between">
-                <h2 class="title">Education</h2>
-                <button type="button" onclick="addEducation()" class="btn-add">+ Add</button>
-            </div>
-            <div id="education-container"></div>
-        </div>
+    <div id="experience-container">
+        <div class="dynamic-block">
+            <input type="text"
+                   name="company_name"
+                   class="input"
+                   placeholder="Company Name">
 
-    </form>
+            <input type="text"
+                   name="role"
+                   class="input"
+                   placeholder="Role">
+
+            <textarea name="description"
+                      class="input"
+                      placeholder="Description"></textarea>
+
+            <select name="employment_type" class="input">
+                <option value="">Select Employment Type</option>
+                <option value="fulltime">Full Time</option>
+                <option value="parttime">Part Time</option>
+                <option value="intern">Internship</option>
+                <option value="contract">Contract</option>
+            </select>
+
+            <label class="field-label">Start Date</label>
+            <input type="date"
+                   name="start_date"
+                   class="input"
+                   required>
+
+            <label class="field-label">End Date</label>
+            <input type="date"
+                   name="end_date"
+                   class="input end-date">
+
+            <label class="checkbox-label">
+                <input type="checkbox"
+                       name="is_current"
+                       onchange="toggleCurrent(this)">
+                I currently work here
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- EDUCATION -->
+<div class="card">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="title">Education</h2>
+        <button type="button"
+                class="btn-add"
+                onclick="addEducation()">
+            + Add
+        </button>
+    </div>
+
+    <div id="education-container">
+        <div class="dynamic-block">
+            <input type="text"
+                   name="qualification"
+                   class="input"
+                   placeholder="Qualification">
+
+            <input type="text"
+                   name="field_of_study"
+                   class="input"
+                   placeholder="Field of Study">
+
+            <input type="text"
+                   name="institution"
+                   class="input"
+                   placeholder="Institution">
+
+            <label class="field-label">Start Year</label>
+            <input type="number"
+                   name="start_year"
+                   class="input"
+                   min="1950"
+                   max="2100"
+                   required>
+
+            <label class="field-label">End Year</label>
+            <input type="number"
+                   name="end_year"
+                   class="input end-year"
+                   min="1950"
+                   max="2100">
+
+            <label class="checkbox-label">
+                <input type="checkbox"
+                       name="is_current"
+                       onchange="toggleCurrent(this)">
+                Currently Studying Here
+            </label>
+        </div>
+    </div>
 </div>
 
 <style>
-body { background:#f1f5f9; }
+body {
+    background: #f1f5f9;
+}
+
+/* Main Layout */
+.profile-layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* Left Side */
+.left-column {
+    position: sticky;
+    top: 20px;
+}
+
+/* Right Side Grid */
+.right-column {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.right-column .card {
+    min-height: 240px;
+}
+
+/* Cards */
 .card {
-    background:white;
-    padding:20px;
-    border-radius:16px;
-    border:1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 14px;
+    border: 1px solid #dbe3ef;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+    width: 100%;
+    transition: all 0.3s ease;
 }
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.10);
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+/* Inputs */
 .input {
-    width:100%;
-    margin-bottom:10px;
-    padding:10px;
-    border-radius:10px;
-    border:1px solid #ddd;
+    width: 100%;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    outline: none;
 }
-.btn-add { background:#6366f1;color:white;padding:5px 10px;border-radius:8px; }
-.btn-save { background:#10b981;color:white;padding:8px 15px;border-radius:10px;margin-top:10px; }
-.btn-update { background:#3b82f6;color:white;padding:4px 10px;border-radius:6px; }
-.btn-delete { background:#ef4444;color:white;padding:4px 10px;border-radius:6px; }
+
+.input:focus {
+    border-color: #6366f1;
+}
+
+/* Buttons */
+.btn-add {
+    background: #6366f1;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-save {
+    background: #10b981;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.btn-update {
+    background: #3b82f6;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-delete {
+    background: #ef4444;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .profile-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .left-column {
+        position: static;
+    }
+}
+
+.left-column .input,
+.left-column textarea {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.gender-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+    margin-bottom: 15px;
+}
+
+.btn-save {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.dynamic-block {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 18px;
+}
+
+.field-label {
+    display: block;
+    margin: 10px 0 6px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0;
+    font-size: 14px;
+}
+
 </style>
 
 <script>
@@ -211,6 +447,165 @@ async function saveLocation(btn){
     if(!id && d.success) el.children[0].value = d.data.location_id;
 }
 
+function addExperience(data = {}) {
+    const container = document.getElementById("experience-container");
+
+    const block = document.createElement("div");
+    block.className = "dynamic-block";
+
+    block.innerHTML = `
+        <input type="hidden" value="${data.experience_id || ''}">
+
+        <input class="input company" placeholder="Company Name" value="${data.company_name || ''}">
+        <input class="input role" placeholder="Role" value="${data.role || ''}">
+        <textarea class="input description">${data.description || ''}</textarea>
+
+        <select class="input employment">
+            <option value="">Select Type</option>
+            <option value="fulltime">Full Time</option>
+            <option value="parttime">Part Time</option>
+            <option value="intern">Internship</option>
+            <option value="contract">Contract</option>
+        </select>
+
+        <input type="date" class="input start" value="${data.start_date || ''}">
+        <input type="date" class="input end-date" value="${data.end_date || ''}">
+
+        <label>
+            <input type="checkbox" class="current" ${data.is_current ? 'checked' : ''} onchange="toggleCurrent(this)">
+            Current Job
+        </label>
+
+        <div class="flex gap-2 mt-2">
+            <button onclick="saveExperience(this)" class="btn-update">Save</button>
+            <button onclick="deleteExperience(this)" class="btn-delete">Delete</button>
+        </div>
+    `;
+
+    container.appendChild(block);
+}
+
+async function saveExperience(btn) {
+    const el = btn.closest('.dynamic-block');
+
+    const id = el.querySelector('input[type="hidden"]').value;
+
+    const payload = {
+        company_name: el.querySelector('.company').value,
+        role: el.querySelector('.role').value,
+        description: el.querySelector('.description').value,
+        employment_type: el.querySelector('.employment').value,
+        start_date: el.querySelector('.start').value,
+        end_date: el.querySelector('.end-date').value,
+        is_current: el.querySelector('.current').checked
+    };
+
+    const res = await fetch(
+        id ? `/jobseeker/profile/experience/${id}/`
+           : `/jobseeker/profile/experience/`,
+        {
+            method: id ? 'PATCH' : 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(payload)
+        }
+    );
+
+    const data = await res.json();
+
+    if (data.success && !id) {
+        el.querySelector('input[type="hidden"]').value = data.data.experience_id;
+    }
+}
+
+async function deleteExperience(btn) {
+    const el = btn.closest('.dynamic-block');
+    const id = el.querySelector('input[type="hidden"]').value;
+
+    if (id) {
+        await fetch(`/jobseeker/profile/experience/${id}/`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+    }
+
+    el.remove();
+}
+
+function addEducation(data = {}) {
+    const container = document.getElementById("education-container");
+
+    const block = document.createElement("div");
+    block.className = "dynamic-block";
+
+    block.innerHTML = `
+        <input type="hidden" value="${data.education_id || ''}">
+
+        <input class="input qualification" placeholder="Qualification" value="${data.qualification || ''}">
+        <input class="input field" placeholder="Field of Study" value="${data.field_of_study || ''}">
+        <input class="input institution" placeholder="Institution" value="${data.institution || ''}">
+
+        <input type="number" class="input start-year" value="${data.start_year || ''}">
+        <input type="number" class="input end-year" value="${data.end_year || ''}">
+
+        <label>
+            <input type="checkbox" class="current" ${data.is_current ? 'checked' : ''} onchange="toggleCurrent(this)">
+            Currently Studying
+        </label>
+
+        <div class="flex gap-2 mt-2">
+            <button onclick="saveEducation(this)" class="btn-update">Save</button>
+            <button onclick="deleteEducation(this)" class="btn-delete">Delete</button>
+        </div>
+    `;
+
+    container.appendChild(block);
+}
+
+async function saveEducation(btn) {
+    const el = btn.closest('.dynamic-block');
+
+    const id = el.querySelector('input[type="hidden"]').value;
+
+    const payload = {
+        qualification: el.querySelector('.qualification').value,
+        field_of_study: el.querySelector('.field').value,
+        institution: el.querySelector('.institution').value,
+        start_year: el.querySelector('.start-year').value,
+        end_year: el.querySelector('.end-year').value,
+        is_current: el.querySelector('.current').checked
+    };
+
+    const res = await fetch(
+        id ? `/jobseeker/profile/education/${id}/`
+           : `/jobseeker/profile/education/`,
+        {
+            method: id ? 'PATCH' : 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(payload)
+        }
+    );
+
+    const data = await res.json();
+
+    if (data.success && !id) {
+        el.querySelector('input[type="hidden"]').value = data.data.education_id;
+    }
+}
+
+async function deleteEducation(btn) {
+    const el = btn.closest('.dynamic-block');
+    const id = el.querySelector('input[type="hidden"]').value;
+
+    if (id) {
+        await fetch(`/jobseeker/profile/education/${id}/`, {
+            method: 'DELETE',
+            headers: getHeaders()
+        });
+    }
+
+    el.remove();
+}
+
 // ─────────── EXPERIENCE ───────────
 function addExperience(data={}){
     const div = document.createElement('div');
@@ -276,5 +671,6 @@ async function saveEducation(btn){
 }
 
 </script>
+
 
 {% endblock %}

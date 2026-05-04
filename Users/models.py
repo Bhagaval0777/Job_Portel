@@ -47,3 +47,51 @@ class Users(AbstractBaseUser,PermissionsMixin):
 
     class Meta:
         db_table = "users"
+
+class UserLoginDetails(models.Model):
+    login_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(Users, on_delete=models.CASCADE)
+    login_time = models.DateTimeField(auto_now_add=True)
+    logout_time = models.DateTimeField(null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        db_table = "user_login_details"
+
+# RolePermission model to define permissions for each role and resource
+class RolePermission(models.Model):
+    ROLE_CHOICES = (
+        ('admin',     'Admin'),
+        ('jobseeker', 'JobSeeker'),
+        ('recruiter', 'Recruiter'),
+    )
+
+    RESOURCE_CHOICES = (
+        ('jobs',          'Jobs'),
+        ('resume',        'Resume & Documents'),
+        ('applications',  'Job Applications'),
+        ('user',         'user'),
+        ('company',       'Company'),
+        ('messages',      'Messages'),
+        ('notifications', 'Notifications'),
+        ('subscriptions', 'Subscriptions'),
+    )
+
+    id         = models.AutoField(primary_key=True)
+    role       = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    resource   = models.CharField(max_length=50, choices=RESOURCE_CHOICES)
+    can_read   = models.BooleanField(default=False)
+    can_write  = models.BooleanField(default=False)
+    can_delete = models.BooleanField(default=False)
+
+    class Meta:
+        db_table       = "role_permissions"
+        unique_together = ("role", "resource")
+        ordering        = ["role", "resource"]
+
+    def __str__(self):
+        return (
+            f"{self.role} | {self.resource} | "
+            f"R:{self.can_read} W:{self.can_write} D:{self.can_delete}"
+        )
+
