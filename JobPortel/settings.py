@@ -53,6 +53,11 @@ INSTALLED_APPS = [
     'django_redis',# Caching
     'Users',
     'jobseeker',
+    'dashboard',
+    'JobApplicationManagement',
+    'Jobs',
+    'recruiter',
+    
 ]
 
 MIDDLEWARE = [
