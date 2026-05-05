@@ -93,18 +93,6 @@ WSGI_APPLICATION = 'JobPortel.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'postgres',
-#         # IMPORTANT: The username must be "postgres.your-project-id"
-#         'USER': 'postgres.hdonhoglfkadwqbmktrc',
-#         'PASSWORD': 'JobPortal!123',
-#         'HOST': 'aws-1-ap-south-1.pooler.supabase.com', # Use the POOLER host
-#         'PORT': '5432', # Using 5432 with the pooler host provides "Session Mode"
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
