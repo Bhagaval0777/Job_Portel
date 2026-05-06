@@ -14,11 +14,11 @@ from celery import shared_task
 logger = logging.getLogger(__name__)
 
 OTP_LIMIT = 10       # max OTP per window
-OTP_WINDOW = 300       # 5 minutes
-OTP_EXPIRY = 120       # 2 minutes
-IP_EXPIRY = 600       # 10 minutes
-SESSION_EXPIRY = 300     # 5 minutes
-ATTEMPT_EXPIRY = 300     # 5 minutes
+OTP_WINDOW = 300     # 5 minutes
+OTP_EXPIRY = 120     # 2 minutes
+IP_EXPIRY = 600      # 10 minutes
+SESSION_EXPIRY = 300 # 5 minutes
+ATTEMPT_EXPIRY = 300 # 5 minutes
 
 def get_client_ip(request):
     try:
