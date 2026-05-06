@@ -2,12 +2,10 @@
 {% load static %}
 
 {% block content %}
+<!-- TOAST NOTIFICATION -->
+<div id="toast-notification" class="toast-popup"></div>
+
 <div class="max-w-7xl mx-auto space-y-6">
-
-    <!-- ALERTS -->
-    <div id="error-banner" class="hidden p-3 bg-red-100 text-red-700 rounded"></div>
-    <div id="success-banner" class="hidden p-3 bg-green-100 text-green-700 rounded"></div>
-
     <form id="profileForm">
         {% csrf_token %}
 
@@ -29,8 +27,16 @@
                         <label><input type="radio" name="gender" value="female"> Female</label>
                         <label><input type="radio" name="gender" value="other"> Other</label>
                     </div>
+                    
+                    <!-- Buttons with IDs for toggling -->
+                    <button type="button" id="save-profile-btn" onclick="createProfile()" class="btn-save">
+                        Save Profile
+                    </button>
 
-                    <button class="btn-save">Save Profile</button>
+                    <!-- Hidden by default -->
+                    <button type="button" id="update-profile-btn" onclick="updateProfile()" class="btn-update mt-3 w-full hidden">
+                        Update Profile
+                    </button>
                 </div>
             </div>
 
@@ -39,8 +45,8 @@
 
                 <!-- SKILLS -->
                 <div class="card">
-                    <div class="flex justify-between items-center">
-                        <h2 class="title">Skills</h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="title mb-0">Skills</h2>
                         <button type="button" onclick="addSkill()" class="btn-add">+ Add</button>
                     </div>
                     <div id="skills-container"></div>
@@ -48,125 +54,74 @@
 
                 <!-- LOCATIONS -->
                 <div class="card">
-                    <div class="flex justify-between items-center">
-                        <h2 class="title">Locations</h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="title mb-0">Locations</h2>
                         <button type="button" onclick="addLocation()" class="btn-add">+ Add</button>
                     </div>
                     <div id="locations-container"></div>
                 </div>
 
                 <!-- EXPERIENCE -->
-<div class="card">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="title">Experience</h2>
-        <button type="button"
-                class="btn-add"
-                onclick="addExperience()">
-            + Add
-        </button>
-    </div>
+                <div class="card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="title mb-0">Experience</h2>
+                        <button type="button" onclick="addExperience()" class="btn-add">+ Add</button>
+                    </div>
+                    <div id="experience-container"></div>
+                </div>
 
-    <div id="experience-container">
-        <div class="dynamic-block">
-            <input type="text"
-                   name="company_name"
-                   class="input"
-                   placeholder="Company Name">
+                <!-- EDUCATION -->
+                <div class="card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="title mb-0">Education</h2>
+                        <button type="button" onclick="addEducation()" class="btn-add">+ Add</button>
+                    </div>
+                    <div id="education-container"></div>
+                </div>
 
-            <input type="text"
-                   name="role"
-                   class="input"
-                   placeholder="Role">
-
-            <textarea name="description"
-                      class="input"
-                      placeholder="Description"></textarea>
-
-            <select name="employment_type" class="input">
-                <option value="">Select Employment Type</option>
-                <option value="fulltime">Full Time</option>
-                <option value="parttime">Part Time</option>
-                <option value="intern">Internship</option>
-                <option value="contract">Contract</option>
-            </select>
-
-            <label class="field-label">Start Date</label>
-            <input type="date"
-                   name="start_date"
-                   class="input"
-                   required>
-
-            <label class="field-label">End Date</label>
-            <input type="date"
-                   name="end_date"
-                   class="input end-date">
-
-            <label class="checkbox-label">
-                <input type="checkbox"
-                       name="is_current"
-                       onchange="toggleCurrent(this)">
-                I currently work here
-            </label>
+            </div>
         </div>
-    </div>
-</div>
-
-<!-- EDUCATION -->
-<div class="card">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="title">Education</h2>
-        <button type="button"
-                class="btn-add"
-                onclick="addEducation()">
-            + Add
-        </button>
-    </div>
-
-    <div id="education-container">
-        <div class="dynamic-block">
-            <input type="text"
-                   name="qualification"
-                   class="input"
-                   placeholder="Qualification">
-
-            <input type="text"
-                   name="field_of_study"
-                   class="input"
-                   placeholder="Field of Study">
-
-            <input type="text"
-                   name="institution"
-                   class="input"
-                   placeholder="Institution">
-
-            <label class="field-label">Start Year</label>
-            <input type="number"
-                   name="start_year"
-                   class="input"
-                   min="1950"
-                   max="2100"
-                   required>
-
-            <label class="field-label">End Year</label>
-            <input type="number"
-                   name="end_year"
-                   class="input end-year"
-                   min="1950"
-                   max="2100">
-
-            <label class="checkbox-label">
-                <input type="checkbox"
-                       name="is_current"
-                       onchange="toggleCurrent(this)">
-                Currently Studying Here
-            </label>
-        </div>
-    </div>
+    </form>
 </div>
 
 <style>
 body {
     background: #f1f5f9;
+}
+
+/* Toast Popup */
+.toast-popup {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    z-index: 9999;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 280px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.toast-popup.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast-success {
+    background: #10b981;
+    color: white;
+}
+
+.toast-error {
+    background: #ef4444;
+    color: white;
 }
 
 /* Main Layout */
@@ -218,6 +173,10 @@ body {
     margin-bottom: 20px;
 }
 
+.mb-0 {
+    margin-bottom: 0 !important;
+}
+
 /* Inputs */
 .input {
     width: 100%;
@@ -226,6 +185,7 @@ body {
     border-radius: 10px;
     border: 1px solid #d1d5db;
     outline: none;
+    box-sizing: border-box;
 }
 
 .input:focus {
@@ -251,6 +211,7 @@ body {
     cursor: pointer;
     width: 100%;
     margin-top: 15px;
+    box-sizing: border-box;
 }
 
 .btn-update {
@@ -271,14 +232,22 @@ body {
     cursor: pointer;
 }
 
+.w-full { width: 100%; }
+.mt-3 { margin-top: 12px; }
+
+/* Hidden utility class */
+.hidden { display: none !important; }
+
 /* Responsive */
 @media (max-width: 1024px) {
     .profile-layout {
         grid-template-columns: 1fr;
     }
-
     .left-column {
         position: static;
+    }
+    .right-column {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -286,7 +255,6 @@ body {
 .left-column textarea {
     width: 100%;
     max-width: 100%;
-    box-sizing: border-box;
 }
 
 .gender-group {
@@ -295,11 +263,6 @@ body {
     gap: 12px;
     margin-top: 10px;
     margin-bottom: 15px;
-}
-
-.btn-save {
-    width: 100%;
-    box-sizing: border-box;
 }
 
 .dynamic-block {
@@ -324,11 +287,9 @@ body {
     margin: 14px 0;
     font-size: 14px;
 }
-
 </style>
 
 <script>
-
 // ─────────── HELPERS ───────────
 function getHeaders() {
     return {
@@ -337,340 +298,391 @@ function getHeaders() {
     };
 }
 
-function showBanner(type, msg) {
-    const err = document.getElementById('error-banner');
-    const ok = document.getElementById('success-banner');
-    err.classList.add('hidden');
-    ok.classList.add('hidden');
-
+let toastTimeout;
+function showToast(type, msg) {
+    const toast = document.getElementById('toast-notification');
+    
+    // Set message
+    toast.innerText = msg;
+    
+    // Reset classes
+    toast.className = 'toast-popup'; 
+    
+    // Apply styling based on type
     if (type === 'error') {
-        err.innerText = msg;
-        err.classList.remove('hidden');
+        toast.classList.add('toast-error');
     } else {
-        ok.innerText = msg;
-        ok.classList.remove('hidden');
+        toast.classList.add('toast-success');
+    }
+    
+    // Trigger animation
+    toast.classList.add('show');
+    
+    // Hide after 3 seconds
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// Controls visibility of Save vs Update buttons
+function toggleProfileButtons(isUpdateMode) {
+    const saveBtn = document.getElementById('save-profile-btn');
+    const updateBtn = document.getElementById('update-profile-btn');
+    
+    if (isUpdateMode) {
+        saveBtn.classList.add('hidden');
+        updateBtn.classList.remove('hidden');
+    } else {
+        saveBtn.classList.remove('hidden');
+        updateBtn.classList.add('hidden');
     }
 }
 
-// ─────────── PROFILE SAVE ───────────
-document.getElementById('profileForm').addEventListener('submit', async function(e){
-    e.preventDefault();
-
-    const payload = {
+// ─────────── PROFILE LOGIC ───────────
+function getProfilePayload() {
+    return {
         full_name: document.querySelector('[name="full_name"]').value,
         phone_number: document.querySelector('[name="phone_number"]').value,
         headline: document.querySelector('[name="headline"]').value,
         bio: document.querySelector('[name="bio"]').value,
         gender: document.querySelector('input[name="gender"]:checked')?.value
     };
+}
 
+async function createProfile() {
+    const payload = getProfilePayload();
     const res = await fetch('/jobseeker/profile/', {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(payload)
     });
-
     const data = await res.json();
-
     if (data.success) {
-        showBanner('success',"Profile Saved");
+        showToast('success', "Profile Created Successfully");
+        // Switch to Update mode after successful creation
+        toggleProfileButtons(true);
     } else {
-        showBanner('error', JSON.stringify(data));
+        showToast('error', JSON.stringify(data.errors || data));
     }
-});
+}
 
-// ─────────── COMMON DELETE ───────────
-async function deleteItem(btn,type){
-    const el = btn.parentElement;
+async function updateProfile() {
+    const payload = getProfilePayload();
+    const res = await fetch('/jobseeker/profile/', {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+        showToast('success', "Profile Updated Successfully");
+    } else {
+        showToast('error', JSON.stringify(data.errors || data));
+    }
+}
+
+// ─────────── COMMON DELETE & TOGGLE ───────────
+async function deleteItem(btn, type) {
+    const el = btn.closest('.dynamic-block');
     const id = el.querySelector('input[type=hidden]').value;
 
-    if(id){
-        await fetch(`/jobseeker/profile/${type}/${id}/`,{
-            method:'DELETE',
-            headers:getHeaders()
+    if (id) {
+        await fetch(`/jobseeker/profile/${type}/${id}/`, {
+            method: 'DELETE',
+            headers: getHeaders()
         });
     }
     el.remove();
 }
 
+function toggleCurrent(checkbox) {
+    const block = checkbox.closest(".dynamic-block");
+    const endDate = block.querySelector(".end-date");
+    const endYear = block.querySelector(".end-year");
+
+    if (endDate) {
+        endDate.disabled = checkbox.checked;
+        if (checkbox.checked) endDate.value = "";
+    }
+    if (endYear) {
+        endYear.disabled = checkbox.checked;
+        if (checkbox.checked) endYear.value = "";
+    }
+}
+
 // ─────────── SKILLS ───────────
-function addSkill(data={}){
+function addSkill(data = {}) {
     const div = document.createElement('div');
+    div.className = "dynamic-block";
     div.innerHTML = `
-        <input type="hidden" value="${data.skill_id||''}">
-        <input class="input" value="${data.skill_name||''}">
-        <button onclick="saveSkill(this)" class="btn-update">Save</button>
-        <button onclick="deleteItem(this,'skill')" class="btn-delete">X</button>
+        <input type="hidden" value="${data.skill_id || ''}">
+        <input class="input" value="${data.skill_name || ''}" placeholder="Skill">
+        <button type="button" onclick="saveSkill(this)" class="btn-update">Save</button>
+        <button type="button" onclick="deleteItem(this,'skill')" class="btn-delete">Delete</button>
     `;
     document.getElementById('skills-container').appendChild(div);
 }
 
-async function saveSkill(btn){
-    const el = btn.parentElement;
+async function saveSkill(btn) {
+    const el = btn.closest('.dynamic-block');
     const id = el.children[0].value;
-    const name = el.children[1].value;
-
-    const res = await fetch(id?`/jobseeker/profile/skill/${id}/`:'/jobseeker/profile/skill/',{
-        method:id?'PATCH':'POST',
-        headers:getHeaders(),
-        body:JSON.stringify({skill_name:name})
-    });
-
+    const res = await fetch(
+        id ? `/jobseeker/profile/skill/${id}/` : '/jobseeker/profile/skill/',
+        {
+            method: id ? 'PATCH' : 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ skill_name: el.children[1].value })
+        }
+    );
     const d = await res.json();
-    if(!id && d.success) el.children[0].value = d.data.skill_id;
+    if (!id && d.success) {
+        el.children[0].value = d.data.skill_id;
+        showToast('success', 'Skill saved');
+    }
 }
 
 // ─────────── LOCATION ───────────
-function addLocation(data={}){
+function addLocation(data = {}) {
     const div = document.createElement('div');
+    div.className = "dynamic-block";
     div.innerHTML = `
-        <input type="hidden" value="${data.location_id||''}">
-        <input class="input" value="${data.location_name||''}">
-        <button onclick="saveLocation(this)" class="btn-update">Save</button>
-        <button onclick="deleteItem(this,'location')" class="btn-delete">X</button>
+        <input type="hidden" value="${data.location_id || ''}">
+        <input class="input" value="${data.location_name || ''}" placeholder="Location">
+        <button type="button" onclick="saveLocation(this)" class="btn-update">Save</button>
+        <button type="button" onclick="deleteItem(this,'location')" class="btn-delete">Delete</button>
     `;
     document.getElementById('locations-container').appendChild(div);
 }
 
-async function saveLocation(btn){
-    const el = btn.parentElement;
+async function saveLocation(btn) {
+    const el = btn.closest('.dynamic-block');
     const id = el.children[0].value;
-    const name = el.children[1].value;
-
-    const res = await fetch(id?`/jobseeker/profile/location/${id}/`:'/jobseeker/profile/location/',{
-        method:id?'PATCH':'POST',
-        headers:getHeaders(),
-        body:JSON.stringify({location_name:name})
-    });
-
+    const res = await fetch(
+        id ? `/jobseeker/profile/location/${id}/` : '/jobseeker/profile/location/',
+        {
+            method: id ? 'PATCH' : 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ location_name: el.children[1].value })
+        }
+    );
     const d = await res.json();
-    if(!id && d.success) el.children[0].value = d.data.location_id;
+    if (!id && d.success) {
+        el.children[0].value = d.data.location_id;
+        showToast('success', 'Location saved');
+    }
 }
 
+// ─────────── EXPERIENCE ───────────
 function addExperience(data = {}) {
     const container = document.getElementById("experience-container");
-
     const block = document.createElement("div");
     block.className = "dynamic-block";
+    const isUpdate = data.experience_id ? true : false;
 
     block.innerHTML = `
-        <input type="hidden" value="${data.experience_id || ''}">
-
-        <input class="input company" placeholder="Company Name" value="${data.company_name || ''}">
-        <input class="input role" placeholder="Role" value="${data.role || ''}">
-        <textarea class="input description">${data.description || ''}</textarea>
-
-        <select class="input employment">
-            <option value="">Select Type</option>
-            <option value="fulltime">Full Time</option>
-            <option value="parttime">Part Time</option>
-            <option value="intern">Internship</option>
-            <option value="contract">Contract</option>
+        <input type="hidden" name="experience_id" value="${data.experience_id || ''}">
+        <input type="text" name="company_name" class="input" placeholder="Company Name" value="${data.company_name || ''}" required>
+        <input type="text" name="role" class="input" placeholder="Role" value="${data.role || ''}" required>
+        <textarea name="description" class="input" placeholder="Job Description">${data.description || ''}</textarea>
+        
+        <select name="employment_type" class="input" required>
+            <option value="">Select Employment Type</option>
+            <option value="fulltime" ${data.employment_type === 'fulltime' ? 'selected' : ''}>Full Time</option>
+            <option value="parttime" ${data.employment_type === 'parttime' ? 'selected' : ''}>Part Time</option>
+            <option value="intern" ${data.employment_type === 'intern' ? 'selected' : ''}>Internship</option>
+            <option value="contract" ${data.employment_type === 'contract' ? 'selected' : ''}>Contract</option>
         </select>
 
-        <input type="date" class="input start" value="${data.start_date || ''}">
-        <input type="date" class="input end-date" value="${data.end_date || ''}">
+        <label class="field-label">Start Date</label>
+        <input type="date" name="start_date" class="input" value="${data.start_date || ''}">
 
-        <label>
-            <input type="checkbox" class="current" ${data.is_current ? 'checked' : ''} onchange="toggleCurrent(this)">
-            Current Job
+        <label class="field-label">End Date</label>
+        <input type="date" name="end_date" class="input end-date" value="${data.end_date || ''}" ${data.is_current ? 'disabled' : ''}>
+
+        <label class="checkbox-label">
+            <input type="checkbox" name="is_current" ${data.is_current ? 'checked' : ''} onchange="toggleCurrent(this)">
+            I currently work here
         </label>
 
-        <div class="flex gap-2 mt-2">
-            <button onclick="saveExperience(this)" class="btn-update">Save</button>
-            <button onclick="deleteExperience(this)" class="btn-delete">Delete</button>
-        </div>
+        <button type="button" class="btn-update" onclick="saveExperience(this)">
+            ${isUpdate ? 'Update' : 'Save'}
+        </button>
+        <button type="button" class="btn-delete" onclick="deleteItem(this,'experience')">
+            Delete
+        </button>
     `;
-
     container.appendChild(block);
 }
 
 async function saveExperience(btn) {
     const el = btn.closest('.dynamic-block');
-
-    const id = el.querySelector('input[type="hidden"]').value;
-
+    const id = el.querySelector('[name="experience_id"]').value;
+    
     const payload = {
-        company_name: el.querySelector('.company').value,
-        role: el.querySelector('.role').value,
-        description: el.querySelector('.description').value,
-        employment_type: el.querySelector('.employment').value,
-        start_date: el.querySelector('.start').value,
-        end_date: el.querySelector('.end-date').value,
-        is_current: el.querySelector('.current').checked
+        company_name: el.querySelector('[name="company_name"]').value,
+        role: el.querySelector('[name="role"]').value,
+        description: el.querySelector('[name="description"]').value,
+        employment_type: el.querySelector('[name="employment_type"]').value,
+        start_date: el.querySelector('[name="start_date"]').value,
+        end_date: el.querySelector('[name="is_current"]').checked ? null : el.querySelector('[name="end_date"]').value,
+        is_current: el.querySelector('[name="is_current"]').checked
     };
 
-    const res = await fetch(
-        id ? `/jobseeker/profile/experience/${id}/`
-           : `/jobseeker/profile/experience/`,
-        {
-            method: id ? 'PATCH' : 'POST',
-            headers: getHeaders(),
-            body: JSON.stringify(payload)
+    const url = id ? `/jobseeker/profile/experience/${id}/` : `/jobseeker/profile/experience/`;
+    const method = id ? 'PATCH' : 'POST';
+
+    const res = await fetch(url, {
+        method: method,
+        headers: getHeaders(),
+        body: JSON.stringify(payload)
+    });
+
+    const d = await res.json();
+    if (d.success) {
+        showToast('success', id ? "Updated Successfully" : "Created Successfully");
+        if (!id) {
+            el.querySelector('[name="experience_id"]').value = d.data.experience_id;
+            btn.innerText = "Update";
         }
-    );
-
-    const data = await res.json();
-
-    if (data.success && !id) {
-        el.querySelector('input[type="hidden"]').value = data.data.experience_id;
+    } else {
+        showToast('error', JSON.stringify(d.errors || d));
     }
 }
 
-async function deleteExperience(btn) {
-    const el = btn.closest('.dynamic-block');
-    const id = el.querySelector('input[type="hidden"]').value;
-
-    if (id) {
-        await fetch(`/jobseeker/profile/experience/${id}/`, {
-            method: 'DELETE',
-            headers: getHeaders()
-        });
-    }
-
-    el.remove();
-}
-
+// ─────────── EDUCATION ───────────
 function addEducation(data = {}) {
     const container = document.getElementById("education-container");
-
     const block = document.createElement("div");
     block.className = "dynamic-block";
+    const isUpdate = data.education_id ? true : false;
 
     block.innerHTML = `
-        <input type="hidden" value="${data.education_id || ''}">
+        <input type="hidden" name="education_id" value="${data.education_id || ''}">
+        <input type="text" name="qualification" class="input" placeholder="Qualification" value="${data.qualification || ''}" required>
+        <input type="text" name="field_of_study" class="input" placeholder="Field of Study" value="${data.field_of_study || ''}" required>
+        <input type="text" name="institution" class="input" placeholder="Institution" value="${data.institution || ''}" required>
 
-        <input class="input qualification" placeholder="Qualification" value="${data.qualification || ''}">
-        <input class="input field" placeholder="Field of Study" value="${data.field_of_study || ''}">
-        <input class="input institution" placeholder="Institution" value="${data.institution || ''}">
+        <label class="field-label">Start Year</label>
+        <input type="number" name="start_year" class="input" min="1950" max="2100" value="${data.start_year || ''}" required>
 
-        <input type="number" class="input start-year" value="${data.start_year || ''}">
-        <input type="number" class="input end-year" value="${data.end_year || ''}">
+        <label class="field-label">End Year</label>
+        <input type="number" name="end_year" class="input end-year" min="1950" max="2100" value="${data.end_year || ''}" ${data.is_current ? 'disabled' : ''}>
 
-        <label>
-            <input type="checkbox" class="current" ${data.is_current ? 'checked' : ''} onchange="toggleCurrent(this)">
-            Currently Studying
+        <label class="checkbox-label">
+            <input type="checkbox" name="is_current" ${data.is_current ? 'checked' : ''} onchange="toggleCurrent(this)">
+            Currently Studying Here
         </label>
 
-        <div class="flex gap-2 mt-2">
-            <button onclick="saveEducation(this)" class="btn-update">Save</button>
-            <button onclick="deleteEducation(this)" class="btn-delete">Delete</button>
-        </div>
+        <button type="button" class="btn-update" onclick="saveEducation(this)">
+            ${isUpdate ? 'Update' : 'Save'}
+        </button>
+        <button type="button" class="btn-delete" onclick="deleteItem(this,'education')">
+            Delete
+        </button>
     `;
-
     container.appendChild(block);
 }
 
 async function saveEducation(btn) {
     const el = btn.closest('.dynamic-block');
-
-    const id = el.querySelector('input[type="hidden"]').value;
+    const id = el.querySelector('[name="education_id"]').value;
 
     const payload = {
-        qualification: el.querySelector('.qualification').value,
-        field_of_study: el.querySelector('.field').value,
-        institution: el.querySelector('.institution').value,
-        start_year: el.querySelector('.start-year').value,
-        end_year: el.querySelector('.end-year').value,
-        is_current: el.querySelector('.current').checked
+        qualification: el.querySelector('[name="qualification"]').value,
+        field_of_study: el.querySelector('[name="field_of_study"]').value,
+        institution: el.querySelector('[name="institution"]').value,
+        start_year: parseInt(el.querySelector('[name="start_year"]').value),
+        end_year: el.querySelector('[name="is_current"]').checked ? null : parseInt(el.querySelector('[name="end_year"]').value) || null,
+        is_current: el.querySelector('[name="is_current"]').checked
     };
 
-    const res = await fetch(
-        id ? `/jobseeker/profile/education/${id}/`
-           : `/jobseeker/profile/education/`,
-        {
-            method: id ? 'PATCH' : 'POST',
+    const url = id ? `/jobseeker/profile/education/${id}/` : `/jobseeker/profile/education/`;
+    const method = id ? 'PATCH' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method: method,
             headers: getHeaders(),
             body: JSON.stringify(payload)
-        }
-    );
-
-    const data = await res.json();
-
-    if (data.success && !id) {
-        el.querySelector('input[type="hidden"]').value = data.data.education_id;
-    }
-}
-
-async function deleteEducation(btn) {
-    const el = btn.closest('.dynamic-block');
-    const id = el.querySelector('input[type="hidden"]').value;
-
-    if (id) {
-        await fetch(`/jobseeker/profile/education/${id}/`, {
-            method: 'DELETE',
-            headers: getHeaders()
         });
+        const d = await res.json();
+        
+        if (d.success) {
+            showToast('success', id ? "Updated Successfully" : "Created Successfully");
+            if (!id) {
+                el.querySelector('[name="education_id"]').value = d.data.education_id;
+                btn.innerText = "Update";
+            }
+        } else {
+            showToast('error', JSON.stringify(d.errors || d));
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('error', "Something went wrong");
     }
-
-    el.remove();
 }
 
-// ─────────── EXPERIENCE ───────────
-function addExperience(data={}){
-    const div = document.createElement('div');
-    div.innerHTML = `
-        <input type="hidden" value="${data.experience_id||''}">
-        <input placeholder="Company" class="input">
-        <input placeholder="Role" class="input">
-        <button onclick="saveExperience(this)" class="btn-update">Save</button>
-        <button onclick="deleteItem(this,'experience')" class="btn-delete">X</button>
-    `;
-    document.getElementById('experience-container').appendChild(div);
+// ─────────── LOAD DATA ON INIT ───────────
+async function loadProfileData() {
+    try {
+        // PROFILE
+        const profileRes = await fetch('/jobseeker/profile/', { headers: getHeaders() });
+        if (profileRes.ok) {
+            const profileData = await profileRes.json();
+            
+            if (profileData.success && profileData.data && Object.keys(profileData.data).length > 0) {
+                const p = profileData.data;
+                document.querySelector('[name="full_name"]').value = p.full_name || '';
+                document.querySelector('[name="phone_number"]').value = p.phone_number || '';
+                document.querySelector('[name="headline"]').value = p.headline || '';
+                document.querySelector('[name="bio"]').value = p.bio || '';
+                
+                if (p.gender) {
+                    const genderInput = document.querySelector(`input[name="gender"][value="${p.gender}"]`);
+                    if (genderInput) genderInput.checked = true;
+                }
+
+                toggleProfileButtons(true);
+            } else {
+                toggleProfileButtons(false);
+            }
+        }
+
+        // SKILLS
+        const skillRes = await fetch('/jobseeker/profile/skill/', { headers: getHeaders() });
+        if (skillRes.ok) {
+            const skills = await skillRes.json();
+            if (skills.data) skills.data.forEach(addSkill);
+        }
+
+        // LOCATIONS
+        const locRes = await fetch('/jobseeker/profile/location/', { headers: getHeaders() });
+        if (locRes.ok) {
+            const locations = await locRes.json();
+            if (locations.data) locations.data.forEach(addLocation);
+        }
+
+        // EDUCATION
+        const eduRes = await fetch('/jobseeker/profile/education/', { headers: getHeaders() });
+        if (eduRes.ok) {
+            const educations = await eduRes.json();
+            if (educations.data) educations.data.forEach(addEducation);
+        }
+
+        // EXPERIENCE
+        const expRes = await fetch('/jobseeker/profile/experience/', { headers: getHeaders() });
+        if (expRes.ok) {
+            const experiences = await expRes.json();
+            if (experiences.data) experiences.data.forEach(addExperience);
+        }
+
+    } catch (error) {
+        console.error("Load Error:", error);
+    }
 }
 
-async function saveExperience(btn){
-    const el = btn.parentElement;
-    const id = el.children[0].value;
-
-    const payload = {
-        company_name: el.children[1].value,
-        role: el.children[2].value
-    };
-
-    const res = await fetch(id?`/jobseeker/profile/experience/${id}/`:'/jobseeker/profile/experience/',{
-        method:id?'PATCH':'POST',
-        headers:getHeaders(),
-        body:JSON.stringify(payload)
-    });
-
-    const d = await res.json();
-    if(!id && d.success) el.children[0].value = d.data.experience_id;
-}
-
-// ─────────── EDUCATION ───────────
-function addEducation(data={}){
-    const div = document.createElement('div');
-    div.innerHTML = `
-        <input type="hidden" value="${data.education_id||''}">
-        <input placeholder="Qualification" class="input">
-        <input placeholder="Institution" class="input">
-        <button onclick="saveEducation(this)" class="btn-update">Save</button>
-        <button onclick="deleteItem(this,'education')" class="btn-delete">X</button>
-    `;
-    document.getElementById('education-container').appendChild(div);
-}
-
-async function saveEducation(btn){
-    const el = btn.parentElement;
-    const id = el.children[0].value;
-
-    const payload = {
-        qualification: el.children[1].value,
-        institution: el.children[2].value
-    };
-
-    const res = await fetch(id?`/jobseeker/profile/education/${id}/`:'/jobseeker/profile/education/',{
-        method:id?'PATCH':'POST',
-        headers:getHeaders(),
-        body:JSON.stringify(payload)
-    });
-
-    const d = await res.json();
-    if(!id && d.success) el.children[0].value = d.data.education_id;
-}
-
+document.addEventListener('DOMContentLoaded', loadProfileData);
 </script>
-
 
 {% endblock %}
