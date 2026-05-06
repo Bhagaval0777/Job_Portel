@@ -6,6 +6,7 @@ class Company(models.Model):
     Stores company details. This can be accessed by other modules 
     to show company info on job postings.
     """
+    company_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
     website = models.URLField(max_length=200, blank=True)
@@ -21,6 +22,7 @@ class Recruiter(models.Model):
     Extends the base User model with recruiter-specific fields.
     Other modules can access this via user.recruiter_profile.
     """
+    recruiter_id = models.AutoField(primary_key=True)
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 

@@ -3,107 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jobseeker Dashboard | TalentFlow</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <title>Job Seeker Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { border: none; border-radius: 10px; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); }
+        .stat-card { color: white; }
+        .bg-applied { background: #6c63ff; }
+        .bg-interviews { background: #17a2b8; }
+        .bg-offers { background: #28a745; }
+        .bg-rejected { background: #dc3545; }
+    </style>
 </head>
-<body class="bg-gray-50 font-sans">
-    <div class="min-h-screen flex">
-        <aside class="w-64 bg-slate-900 text-white hidden md:block">
-            <div class="p-6">
-                <h1 class="text-2xl font-bold text-blue-400">TalentFlow</h1>
+<body>
+
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold">Welcome Back!</h2>
+            <p class="text-muted">Here is an overview of your job search progress.</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card p-4 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">Profile Completion</h5>
+                    <span class="fw-bold text-primary">{{ profile_completion }}%</span>
+                </div>
+                <div class="progress" style="height: 25px; border-radius: 12px; background-color: #e9ecef;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated 
+                        {% if profile_completion < 40 %} bg-danger 
+                        {% elif profile_completion < 80 %} bg-warning 
+                        {% else %} bg-success {% endif %}" 
+                        role="progressbar" 
+                        style="width: {{ profile_completion }}%; transition: width 1.5s ease-in-out;" 
+                        aria-valuenow="{{ profile_completion }}" 
+                        aria-valuemin="0" 
+                        aria-valuemax="100">
+                        {% if profile_completion > 10 %}
+                            {{ profile_completion }}% Complete
+                        {% endif %}
+                    </div>
+                </div>
+                {% if profile_completion < 100 %}
+                <small class="text-muted mt-2">Complete your profile to increase your chances of being noticed by employers.</small>
+                {% endif %}
             </div>
-            <nav class="mt-6 px-4 space-y-2">
-                <a href="#" class="flex items-center space-x-3 bg-blue-600 p-3 rounded-lg"><i data-lucide="layout-dashboard"></i> <span>Dashboard</span></a>
-                <a href="#" class="flex items-center space-x-3 p-3 text-slate-300 hover:bg-slate-800 rounded-lg"><i data-lucide="briefcase"></i> <span>Find Jobs</span></a>
-                <a href="#" class="flex items-center space-x-3 p-3 text-slate-300 hover:bg-slate-800 rounded-lg"><i data-lucide="file-text"></i> <span>Applications</span></a>
-                <a href="#" class="flex items-center space-x-3 p-3 text-slate-300 hover:bg-slate-800 rounded-lg"><i data-lucide="user"></i> <span>Profile</span></a>
-            </nav>
-        </aside>
+        </div>
+    </div>
 
-        <main class="flex-1 p-8">
-            <header class="flex justify-between items-center mb-10">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-800">Welcome Back!</h2>
-                    <p class="text-slate-500">Track your application progress and discover new opportunities.</p>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card bg-applied shadow-sm p-3">
+                <div class="card-body">
+                    <h6>Total Applied</h6>
+                    <h2 class="display-6 fw-bold">{{ counts.total_applied }}</h2>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <button class="relative p-2 text-slate-400 hover:text-slate-600"><i data-lucide="bell"></i></button>
-                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">JD</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-interviews shadow-sm p-3">
+                <div class="card-body">
+                    <h6>Interviews</h6>
+                    <h2 class="display-6 fw-bold">{{ counts.total_interviews }}</h2>
                 </div>
-            </header>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-offers shadow-sm p-3">
+                <div class="card-body">
+                    <h6>Offers</h6>
+                    <h2 class="display-6 fw-bold">{{ counts.total_offers }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-rejected shadow-sm p-3">
+                <div class="card-body">
+                    <h6>Rejected</h6>
+                    <h2 class="display-6 fw-bold">{{ counts.total_rejected }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-semibold text-slate-700">Profile Completion</h3>
-                    <span class="text-sm font-bold text-blue-600">{{ profile_completion }}%</span>
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Recent Applications</h5>
+                    <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
                 </div>
-                <div class="bg-blue-500 h-3 rounded-full transition-all duration-1000 w-[{{ profile_completion }}%]">
-                </div>
-                <p class="mt-3 text-xs text-slate-400">Complete your profile to increase visibility to recruiters by 40%.</p>
-            </section>
-
-            <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <div class="p-2 bg-blue-50 w-fit rounded-lg text-blue-600 mb-4"><i data-lucide="send"></i></div>
-                    <p class="text-slate-500 text-sm font-medium">Applied</p>
-                    <p class="text-2xl font-bold text-slate-800">{{ counts.total_applied }}</p>
-                </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <div class="p-2 bg-purple-50 w-fit rounded-lg text-purple-600 mb-4"><i data-lucide="users"></i></div>
-                    <p class="text-slate-500 text-sm font-medium">Interviews</p>
-                    <p class="text-2xl font-bold text-slate-800">{{ counts.total_interviews }}</p>
-                </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <div class="p-2 bg-green-50 w-fit rounded-lg text-green-600 mb-4"><i data-lucide="award"></i></div>
-                    <p class="text-slate-500 text-sm font-medium">Offers</p>
-                    <p class="text-2xl font-bold text-slate-800">{{ counts.total_offers }}</p>
-                </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <div class="p-2 bg-red-50 w-fit rounded-lg text-red-600 mb-4"><i data-lucide="x-circle"></i></div>
-                    <p class="text-slate-500 text-sm font-medium">Rejected</p>
-                    <p class="text-2xl font-bold text-slate-800">{{ counts.total_rejected }}</p>
-                </div>
-            </section>
-
-            <section class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="p-6 border-b border-slate-50">
-                    <h3 class="font-bold text-slate-800">Recent Applications</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 text-slate-500 text-sm uppercase">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
                             <tr>
-                                <th class="px-6 py-4">Job Title</th>
-                                <th class="px-6 py-4">Company</th>
-                                <th class="px-6 py-4">Status</th>
-                                <th class="px-6 py-4">Applied Date</th>
+                                <th>Job Title</th>
+                                <th>Company</th>
+                                <th>Date Applied</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100">
+                        <tbody>
                             {% for app in all_applications %}
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="px-6 py-4 font-semibold text-slate-700">{{ app.job_title }}</td>
-                                <td class="px-6 py-4 text-slate-600">{{ app.company }}</td>
-                                <td class="px-6 py-4">
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold 
-                                    {% if app.status == 'Interviewing' %} bg-purple-100 text-purple-700 
-                                    {% elif app.status == 'Offered' %} bg-green-100 text-green-700
-                                    {% else %} bg-blue-100 text-blue-700 {% endif %}">
+                            <tr>
+                                <td class="fw-bold">{{ app.job_title }}</td>
+                                <td>{{ app.company }}</td>
+                                <td>{{ app.date }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if 'offered' in app.status|lower %}bg-success
+                                        {% elif 'interview' in app.status|lower %}bg-info
+                                        {% elif 'rejected' in app.status|lower %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
                                         {{ app.status }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-slate-500 text-sm">{{ app.date }}</td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="4" class="px-6 py-10 text-center text-slate-400">No applications yet. Start hunting!</td></tr>
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No applications found yet. Start applying!</td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-            </section>
-        </main>
+            </div>
+        </div>
     </div>
-    <script>lucide.createIcons();</script>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

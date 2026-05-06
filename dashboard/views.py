@@ -3,7 +3,8 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 import datetime
 from django.utils import timezone
-from jobseeker.models import  JobSeekerProfile
+from JobApplicationManagement.models import Application
+from Jobs.models import Job
 from Users.serializers import UserSerializer
 
 from asyncio.log import logger
@@ -50,33 +51,33 @@ class jobseekerDashboardView(APIView):
             completion_rate = 0
 
         # 2. Fetch Application Stats
-        # all_apps = JobApplication.objects.filter(applicant=user).select_related('job')
+        all_apps = Application.objects.filter(jobseeker=user).select_related('job')
         
         # Breakdown by status
-        # interview_apps = all_apps.filter(status='interviewing')
-        # offered_apps = all_apps.filter(status='offered')
-        # rejected_apps = all_apps.filter(status='rejected')
+        interview_apps = all_apps.filter(status='interviewing')
+        offered_apps = all_apps.filter(status='offered')
+        rejected_apps = all_apps.filter(status='rejected')
 
         # Helper to format data for HTML
-        # def format_apps(queryset):
-        #     return [
-        #         {
-        #             "job_title": app.job.title,
-        #             "company": app.job.company_name,
-        #             "status": app.get_status_display(),
-        #             "date": app.created_at.strftime("%Y-%m-%d")
-        #         } for app in queryset
-        #     ]
+        def format_apps(queryset):
+            return [
+                {
+                    "job_title": app.job.title,
+                    "company": app.job.company.name,
+                    "status": app.get_status_display(),
+                    "date": app.applied_at.strftime("%Y-%m-%d")
+                } for app in queryset
+            ]
 
         context = {
             "profile_completion": completion_rate,
-            # "counts": {
-            #     "total_applied": all_apps.count(),
-            #     "total_interviews": interview_apps.count(),
-            #     "total_offers": offered_apps.count(),
-            #     "total_rejected": rejected_apps.count(),
-            # },
-            # "all_applications": format_apps(all_apps.order_by('-created_at')[:5]), # Show last 5
+            "counts": {
+                "total_applied": all_apps.count(),
+                "total_interviews": interview_apps.count(),
+                "total_offers": offered_apps.count(),
+                "total_rejected": rejected_apps.count(),
+            },
+            "all_applications": format_apps(all_apps.order_by('-applied_at')[:5]) # Show last 5
         }
         
        
@@ -96,7 +97,7 @@ class RecruiterDashboardView(APIView):
             logger.warning(f"Employer profile missing for recruiter {user.username}")
             completion_rate = 0
 
-        my_jobs = JobListing.objects.filter(posted_by=user).order_by('-created_at')
+        my_jobs = Job.objects.filter(posted_by=user).order_by('-created_at')
         
         job_postings_data = []
         for job in my_jobs:
@@ -108,7 +109,7 @@ class RecruiterDashboardView(APIView):
                 "applicant_count": job.applications.count() 
             })
 
-        all_apps = JobApplication.objects.filter(job__in=my_jobs)
+        all_apps = Application.objects.filter(job__in=my_jobs)
         status_summary = {
             "total_job_postings": my_jobs.count(),
             "total_applicants_received": all_apps.count(),
