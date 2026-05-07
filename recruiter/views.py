@@ -8,6 +8,7 @@ from .serializers import (
     RecruiterSerializer, 
     RecruiterRegistrationSerializer
 )
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
@@ -15,6 +16,8 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
 class RecruiterViewSet(viewsets.ModelViewSet):
     queryset = Recruiter.objects.all()
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         # Use the Registration serializer for POST requests

@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from recruiter.models import Recruiter, Company
  
 # Create your models here.
  
@@ -57,12 +58,12 @@ class Job(models.Model):
         ('lead',"LEAD"),
     )
     recruiter = models.ForeignKey(
-        'recruiter.Recruiter',
+        Recruiter,
         on_delete=models.CASCADE,
         related_name='jobs',
     )
     company = models.ForeignKey(
-        'recruiter.Company',
+        Company,
         on_delete=models.CASCADE,
         related_name='jobs',
     )
