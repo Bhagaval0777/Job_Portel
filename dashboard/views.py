@@ -7,6 +7,7 @@ from JobApplicationManagement.models import Application
 from Jobs.models import Job
 from Users.serializers import UserSerializer
 from jobseeker.models import JobSeekerProfile
+from django.db.models import Count
 
 from asyncio.log import logger
 from django.shortcuts import render
@@ -66,9 +67,9 @@ class jobseekerDashboardView(APIView):
         # 3. Stats Breakdown
         status_counts = {
             "total_applied": all_apps.count(),
-            "total_interviews": all_apps.filter(status='interviewing').count(),
-            "total_offers": all_apps.filter(status='offered').count(),
-            "total_rejected": all_apps.filter(status='rejected').count(),
+            "total_pending": all_apps.filter(status='Pending').count(),
+            "total_accepted": all_apps.filter(status='Accepted').count(),
+            "total_rejected": all_apps.filter(status='Rejected').count(),
         }
 
         # Helper to format data for HTML
@@ -84,56 +85,105 @@ class jobseekerDashboardView(APIView):
             return data
 
         context = {
+            "user": profile.full_name if profile else user.user_email,
             "profile_completion": completion_rate,
             "counts": status_counts,
-            "all_applications": format_apps(all_apps.order_by('-applied_at')[:5]),
+            #"all_applications": format_apps(all_apps.order_by('-applied_at')[:5]),
+            "all_applications": all_apps.order_by('-applied_at')[:5],
             "profile_missing": profile is None # Useful for showing a warning in the HTML
         }
 
         return render(request, 'jobseeker_dashboard.html', context)
 
-class RecruiterDashboardView(APIView):
+# class RecruiterDashboardView(APIView):
 
+#     authentication_classes = [JWTAuthentication]
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         serializer = UserSerializer(request.user)
+#         user = User.objects.get(user_email=serializer.data['user_email'])
+#         profile = getattr(user, 'Recruiter', None)
+
+#         if profile:
+#             fields_to_check = [user.first_name, user.email, profile.company.name, profile.website, profile.description]
+#             filled_fields = [f for f in fields_to_check if f]
+#             completion_rate = int((len(filled_fields) / len(fields_to_check)) * 100)
+#         else:
+#             logger.warning(f"Employer profile missing for recruiter {user.user_email}")
+#             completion_rate = 0
+
+#         my_jobs = Job.objects.filter(recruiter=profile).select_related('company', 'category')
+        
+#         job_postings_data = []
+#         for job in my_jobs:
+#             job_postings_data.append({
+#                 "id": job.id,
+#                 "title": job.title,
+#                 "is_active": job.status,
+#                 "created_at": job.created_at.strftime("%Y-%m-%d"),
+#                 "applicant_count": job.applications.count() 
+#             })
+
+#         all_apps = Application.objects.filter(job__in=my_jobs)
+#         status_summary = {
+#             "total_job_postings": my_jobs.count(),
+#             "total_applicants_received": all_apps.count(),
+#             "active_postings": my_jobs.filter(status='active').count(),
+#             "new_this_week": all_apps.filter(applied_at__gte=timezone.now() - datetime.timedelta(days=7)).count(),
+#         }
+
+#         context = {
+#             "profile_completion": completion_rate,
+#             "status_summary": status_summary,
+#             "my_job_postings": job_postings_data,
+#         }
+
+#         return render(request, 'recruiter_dashboard.html', context)
+
+class RecruiterDashboardView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        serializer = UserSerializer(request.user)
-        user = User.objects.get(user_email=serializer.data['user_email'])
-        profile = getattr(user, 'Recruiter', None)
+        user = request.user
+        # Use the related_name defined in your Recruiter model
+        profile = getattr(user, 'recruiter_profile', None)
 
-        if profile:
-            fields_to_check = [user.first_name, user.email, profile.company.name, profile.website, profile.description]
-            filled_fields = [f for f in fields_to_check if f]
-            completion_rate = int((len(filled_fields) / len(fields_to_check)) * 100)
-        else:
-            logger.warning(f"Employer profile missing for recruiter {user.user_email}")
-            completion_rate = 0
+        if not profile:
+            return render(request, 'recruiter_dashboard.html', {"profile_missing": True})
 
-        my_jobs = Job.objects.filter(recruiter=profile).select_related('company', 'category')
+        # 1. Profile Completion Logic
+        # Checking fields across User, Recruiter, and linked Company
+        fields_to_check = [
+            # user.first_name, 
+            # user.email, 
+            profile.designation,
+            profile.company.name if profile.company else None,
+            profile.phone_number
+        ]
+        filled_fields = [f for f in fields_to_check if f]
+        completion_rate = int((len(filled_fields) / len(fields_to_check)) * 100)
+
+        # 2. Optimized Job Query
+        # We use .annotate() to count applications efficiently in one database hit
+        my_jobs = Job.objects.filter(recruiter=profile).select_related('company', 'category').annotate(
+            num_applicants=Count('applications')
+        )
         
-        job_postings_data = []
-        for job in my_jobs:
-            job_postings_data.append({
-                "id": job.id,
-                "title": job.title,
-                "is_active": job.status,
-                "created_at": job.created_at.strftime("%Y-%m-%d"),
-                "applicant_count": job.applications.count() 
-            })
-
+        # 3. Stats Summary
         all_apps = Application.objects.filter(job__in=my_jobs)
         status_summary = {
             "total_job_postings": my_jobs.count(),
             "total_applicants_received": all_apps.count(),
-            "active_postings": my_jobs.filter(status='active').count(),
+            "active_postings": my_jobs.filter(status='open').count(), # Changed 'active' to 'open' based on your model choices
             "new_this_week": all_apps.filter(applied_at__gte=timezone.now() - datetime.timedelta(days=7)).count(),
         }
 
         context = {
             "profile_completion": completion_rate,
             "status_summary": status_summary,
-            "my_job_postings": job_postings_data,
+            "my_job_postings": my_jobs, # Pass the queryset directly for better template handling
         }
 
-        #return render(request, 'recruiter_dashboard.html', context)
+        return render(request, 'recruiter_dashboard.html', context)

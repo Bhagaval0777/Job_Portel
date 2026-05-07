@@ -3,6 +3,7 @@ from django.conf import settings
 from Jobs.models import Job
 from jobseeker.models import JobSeekerProfile
 
+
 # Create your models here.
 class Application(models.Model):
     STATUS_CHOICES = (
