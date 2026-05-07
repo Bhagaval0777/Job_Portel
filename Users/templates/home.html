@@ -61,8 +61,9 @@
                 container.innerHTML = `
                     <p>Welcome, <strong id="user-display"></strong></p>
                     <ul>
+                        <li><strong>ID:</strong> <span id="u-id"></span></li>
                         <li><strong>Username:</strong> <span id="u-name"></span></li>
-                        <li><strong>Email:</strong> <span id="u-id"></span></li>
+                        <li><strong>Email:</strong> <span id="u-email"></span></li>
                         <li><strong>Role:</strong> <span id="u-role"></span></li>
                     </ul>
                     <p><button id="logout-btn" style="color: red;">Log out</button></p>
@@ -71,6 +72,7 @@
                 // Safe text injection
                 document.getElementById('user-display').textContent = data.user_email;
                 document.getElementById('u-name').textContent = data.user_email;
+                document.getElementById('u-email').textContent = data.user_email;
                 document.getElementById('u-id').textContent = data.user_id;
                 document.getElementById('u-role').textContent = data.role;
 

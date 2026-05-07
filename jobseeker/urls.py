@@ -3,6 +3,7 @@ from .views import *
 
 urlpatterns = [
     path('interface/', jobseeker_dashboard_view, name='jobseeker-dashboard'),
+    path('dashboard/', jobseeker_dashboard_view, name='jobseeker-dashboard'),
 
     path('profile/', JobSeekerProfileView.as_view()),
 

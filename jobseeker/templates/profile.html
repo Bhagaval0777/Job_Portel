@@ -686,3 +686,458 @@ document.addEventListener('DOMContentLoaded', loadProfileData);
 </script>
 
 {% endblock %}
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8">MY PROFILE DASHBOARD</h1>
+
+    <div id="error-banner" class="hidden mb-4 p-4 bg-red-900 border border-red-500 rounded-lg text-red-200 text-sm"></div>
+    <div id="success-banner" class="hidden mb-4 p-4 bg-green-900 border border-green-500 rounded-lg text-green-200 text-sm"></div>
+
+    <form id="profileForm" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% csrf_token %}
+
+        <div class="card-style space-y-4">
+            <h3 class="font-bold text-lg">Personal Information</h3>
+
+            <div>
+                <label class="label-style">Full Name *</label>
+                <input type="text" name="full_name" placeholder="Your full name" class="input-style" required>
+            </div>
+
+            <div>
+                <label class="label-style">Phone Number *</label>
+                <input type="text" name="phone_number" placeholder="10-digit phone number" class="input-style" required>
+            </div>
+
+            <div>
+                <label class="label-style">Gender</label>
+                <div class="flex gap-4 mt-1">
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="gender" value="male"> Male
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="gender" value="female"> Female
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="gender" value="other"> Other
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <label class="label-style">Headline</label>
+                <input type="text" name="headline" placeholder="e.g. Full Stack Developer" class="input-style">
+                <span class="text-xs text-slate-500">Max 30 words</span>
+            </div>
+
+            <div>
+                <label class="label-style">Bio</label>
+                <textarea name="bio" rows="4" placeholder="Tell us about yourself..." class="input-style"></textarea>
+                <span class="text-xs text-slate-500">Max 150 words</span>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit" id="submitBtn"
+                    class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg text-sm font-semibold transition text-white">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+
+        <div class="card-style">
+            <h3 class="font-bold mb-4">Preferred Locations</h3>
+            <div id="locations-container" class="max-h-72 overflow-y-auto space-y-2"></div>
+            <div class="flex gap-2 mt-3">
+                <input type="text" id="locationInput" class="input-style" placeholder="Add location...">
+                <button type="button" onclick="addLocation()"
+                    class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-semibold shrink-0 text-white">
+                    Add
+                </button>
+            </div>
+        </div>
+
+        <div class="card-style">
+            <h3 class="font-bold mb-4">Skills</h3>
+            <div id="skills-container" class="max-h-72 overflow-y-auto space-y-2"></div>
+            <div class="flex gap-2 mt-3">
+                <input type="text" id="skillInput" class="input-style" placeholder="Add skill...">
+                <button type="button" onclick="addSkill()"
+                    class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-semibold shrink-0 text-white">
+                    Add
+                </button>
+            </div>
+        </div>
+
+        <div class="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <div class="card-style">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold">Experience</h3>
+                    <button type="button" onclick="addExperience()"
+                        class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm font-semibold text-white">
+                        + Add
+                    </button>
+                </div>
+                <div id="experience-container" class="max-h-96 overflow-y-auto space-y-3"></div>
+            </div>
+
+            <div class="card-style">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold">Education</h3>
+                    <button type="button" onclick="addEducation()"
+                        class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm font-semibold text-white">
+                        + Add
+                    </button>
+                </div>
+                <div id="education-container" class="max-h-96 overflow-y-auto space-y-3"></div>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+<script>
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function wordCount(text) {
+    return text.trim().split(/\s+/).filter(w => w).length;
+}
+
+// Ensure you include your auth tokens here if using JWTAuthentication from DRF
+function getHeaders() {
+    return {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCSRFToken(),
+        // 'Authorization': `Bearer ${localStorage.getItem('access_token')}` // Uncomment if using JWT purely
+    };
+}
+
+function showBanner(type, message) {
+    const err = document.getElementById('error-banner');
+    const ok  = document.getElementById('success-banner');
+    err.classList.add('hidden');
+    ok.classList.add('hidden');
+    if (type === 'error') {
+        err.textContent = message;
+        err.classList.remove('hidden');
+    } else {
+        ok.textContent = message;
+        ok.classList.remove('hidden');
+        setTimeout(() => ok.classList.add('hidden'), 4000);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+// ── Item Generators ───────────────────────────────────────────────────────────
+
+function addLocation(data = {}) {
+    const val = data.location_name || document.getElementById('locationInput').value.trim();
+    if (!val) return;
+
+    const div = document.createElement('div');
+    div.className = 'flex gap-2 items-center location-item';
+    div.innerHTML = `
+        <input type="hidden" class="loc-id" value="${data.location_id || ''}">
+        <input type="text" class="input-style loc-name flex-1" value="${escapeHtml(val)}" ${data.location_id ? 'readonly' : ''}>
+        <button type="button" onclick="removeItem(this, 'location', '${data.location_id || ''}')"
+            class="text-red-400 hover:text-red-300 text-lg shrink-0" title="Remove">✕</button>
+    `;
+    document.getElementById('locations-container').appendChild(div);
+    document.getElementById('locationInput').value = '';
+}
+
+function addSkill(data = {}) {
+    const val = data.skill_name || document.getElementById('skillInput').value.trim();
+    if (!val) return;
+
+    const div = document.createElement('div');
+    div.className = 'flex gap-2 items-center skill-item';
+    div.innerHTML = `
+        <input type="hidden" class="skill-id" value="${data.skill_id || ''}">
+        <input type="text" class="input-style skill-name flex-1" value="${escapeHtml(val)}" ${data.skill_id ? 'readonly' : ''}>
+        <button type="button" onclick="removeItem(this, 'skill', '${data.skill_id || ''}')"
+            class="text-red-400 hover:text-red-300 text-lg shrink-0" title="Remove">✕</button>
+    `;
+    document.getElementById('skills-container').appendChild(div);
+    document.getElementById('skillInput').value = '';
+}
+
+function addExperience(data = {}) {
+    const div = document.createElement('div');
+    div.className = 'border border-slate-300 rounded-xl p-4 space-y-2 exp-item bg-gray-50';
+    div.innerHTML = `
+        <input type="hidden" class="exp-id" value="${data.experience_id || ''}">
+        <input placeholder="Company Name *" class="input-style exp-company" value="${escapeHtml(data.company_name || '')}">
+        <input placeholder="Job Title / Role *" class="input-style exp-role" value="${escapeHtml(data.role || '')}">
+        <textarea placeholder="Description" class="input-style exp-desc">${escapeHtml(data.description || '')}</textarea>
+        <select class="input-style exp-type">
+            <option value="fulltime"  ${data.employment_type==='fulltime'  ? 'selected' : ''}>Full Time</option>
+            <option value="parttime"  ${data.employment_type==='parttime'  ? 'selected' : ''}>Part Time</option>
+            <option value="intern"    ${data.employment_type==='intern'    ? 'selected' : ''}>Internship</option>
+            <option value="contract"  ${data.employment_type==='contract'  ? 'selected' : ''}>Contract</option>
+        </select>
+        <div class="grid grid-cols-2 gap-2">
+            <div>
+                <label class="label-style">Start Date *</label>
+                <input type="date" class="input-style exp-start" value="${data.start_date || ''}">
+            </div>
+            <div>
+                <label class="label-style">End Date</label>
+                <input type="date" class="input-style exp-end" value="${data.end_date || ''}" ${data.is_current ? 'disabled' : ''}>
+            </div>
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer text-sm">
+            <input type="checkbox" class="exp-current" onchange="toggleEndDate(this, '.exp-end')" ${data.is_current ? 'checked' : ''}> Currently working here
+        </label>
+        <div class="flex justify-end mt-2">
+            <button type="button" onclick="removeItem(this, 'experience', '${data.experience_id || ''}')"
+                class="text-red-500 hover:text-red-700 text-sm font-semibold">Remove ✕</button>
+        </div>
+    `;
+    document.getElementById('experience-container').appendChild(div);
+}
+
+function addEducation(data = {}) {
+    const div = document.createElement('div');
+    div.className = 'border border-slate-300 rounded-xl p-4 space-y-2 edu-item bg-gray-50';
+    div.innerHTML = `
+        <input type="hidden" class="edu-id" value="${data.education_id || ''}">
+        <input placeholder="Qualification *" class="input-style edu-qualification" value="${escapeHtml(data.qualification || '')}">
+        <input placeholder="Field of Study *" class="input-style edu-field" value="${escapeHtml(data.field_of_study || '')}">
+        <input placeholder="Institution *" class="input-style edu-institution" value="${escapeHtml(data.institution || '')}">
+        <div class="grid grid-cols-2 gap-2">
+            <div>
+                <label class="label-style">Start Year *</label>
+                <input type="number" class="input-style edu-start" placeholder="YYYY" value="${data.start_year || ''}" min="1950" max="2099">
+            </div>
+            <div>
+                <label class="label-style">End Year</label>
+                <input type="number" class="input-style edu-end" placeholder="YYYY" value="${data.end_year || ''}" min="1950" max="2099" ${data.is_current ? 'disabled' : ''}>
+            </div>
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer text-sm">
+            <input type="checkbox" class="edu-current" onchange="toggleEndDate(this, '.edu-end')" ${data.is_current ? 'checked' : ''}> Currently studying here
+        </label>
+        <div class="flex justify-end mt-2">
+            <button type="button" onclick="removeItem(this, 'education', '${data.education_id || ''}')"
+                class="text-red-500 hover:text-red-700 text-sm font-semibold">Remove ✕</button>
+        </div>
+    `;
+    document.getElementById('education-container').appendChild(div);
+}
+
+function toggleEndDate(cb, selector) {
+    const end = cb.closest('div.border').querySelector(selector);
+    end.disabled = cb.checked;
+    if (cb.checked) end.value = '';
+}
+
+// Handles immediate deletion API calls when a user removes a block/chip
+async function removeItem(btn, type, id) {
+    if (id) {
+        if (!confirm(`Are you sure you want to remove this ${type}?`)) return;
+        try {
+            const res = await fetch(`/jobseeker/profile/${type}/${id}/`, {
+                method: 'DELETE',
+                headers: getHeaders()
+            });
+            const json = await res.json();
+            if (!json.success) throw new Error(json.message);
+        } catch (err) {
+            alert(`Failed to delete ${type}.`);
+            return;
+        }
+    }
+    btn.closest('div.flex, div.border').remove();
+}
+
+// ── Profile Loading ───────────────────────────────────────────────────────────
+
+let profileExists = false;
+
+async function loadProfile() {
+    try {
+        // 1. Fetch Main Profile
+        const res = await fetch('/jobseeker/profile/', { headers: getHeaders() });
+        const json = await res.json();
+
+        if (res.status === 404 || !json.success) {
+            profileExists = false;
+            return;
+        }
+
+        profileExists = true;
+        const d = json.data;
+
+        document.querySelector('[name="full_name"]').value  = d.full_name    || '';
+        document.querySelector('[name="phone_number"]').value = d.phone_number || '';
+        document.querySelector('[name="headline"]').value   = d.headline     || '';
+        document.querySelector('[name="bio"]').value        = d.bio          || '';
+
+        if (d.gender) {
+            const radio = document.querySelector(`input[name="gender"][value="${d.gender}"]`);
+            if (radio) radio.checked = true;
+        }
+
+        // 2. Fetch Related Data (Because backend separates these endpoints)
+        fetchRelated('/jobseeker/profile/skill/', addSkill);
+        fetchRelated('/jobseeker/profile/location/', addLocation);
+        fetchRelated('/jobseeker/profile/education/', addEducation);
+        fetchRelated('/jobseeker/profile/experience/', addExperience);
+
+    } catch (err) {
+        console.error('Failed to load profile:', err);
+    }
+}
+
+async function fetchRelated(url, renderCallback) {
+    try {
+        const res = await fetch(url, { headers: getHeaders() });
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+            json.data.forEach(item => renderCallback(item));
+        }
+    } catch (err) { console.error(`Error fetching from ${url}`, err); }
+}
+
+// ── Saving / Submission ───────────────────────────────────────────────────────
+
+document.getElementById('profileForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const full_name = document.querySelector('[name="full_name"]').value.trim();
+    const phone_number = document.querySelector('[name="phone_number"]').value.trim();
+    const gender    = document.querySelector('input[name="gender"]:checked');
+    const headline  = document.querySelector('[name="headline"]').value.trim();
+    const bio       = document.querySelector('[name="bio"]').value.trim();
+
+    if (!full_name) return showBanner('error', 'Full name is required.');
+    if (!gender) return showBanner('error', 'Please select a gender.');
+    if (headline && wordCount(headline) > 30) return showBanner('error', 'Headline must be 30 words or fewer.');
+    if (bio && wordCount(bio) > 150) return showBanner('error', 'Bio must be 150 words or fewer.');
+
+    const payload = { full_name, phone_number, gender: gender.value, headline, bio };
+    const method = profileExists ? 'PATCH' : 'POST';
+    const btn = document.getElementById('submitBtn');
+    
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    try {
+        // 1. Save Main Profile First (Required to attach related entities)
+        const res = await fetch('/jobseeker/profile/', {
+            method,
+            headers: getHeaders(),
+            body: JSON.stringify(payload),
+        });
+
+        const json = await res.json();
+
+        if (json.success) {
+            profileExists = true;
+            // 2. Sync Related Items
+            await syncRelatedEntities();
+            showBanner('success', json.message || 'Profile saved successfully.');
+        } else {
+            showBanner('error', Object.values(json.errors || json)[0] || 'Failed to save profile.');
+        }
+    } catch (err) {
+        showBanner('error', 'Network error. Please try again.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+    }
+});
+
+// Helper orchestrator to save all nested lists sequentially to match the backend
+async function syncRelatedEntities() {
+    
+    // Skills (POST new only)
+    for (const el of document.querySelectorAll('.skill-item')) {
+        const id = el.querySelector('.skill-id').value;
+        const name = el.querySelector('.skill-name').value.trim();
+        if (!id && name) {
+            const res = await fetch('/jobseeker/profile/skill/', {
+                method: 'POST', headers: getHeaders(), body: JSON.stringify({ skill_name: name })
+            });
+            const d = await res.json();
+            if (d.success) el.querySelector('.skill-id').value = d.data.skill_id;
+        }
+    }
+
+    // Locations (POST new only)
+    for (const el of document.querySelectorAll('.location-item')) {
+        const id = el.querySelector('.loc-id').value;
+        const name = el.querySelector('.loc-name').value.trim();
+        if (!id && name) {
+            const res = await fetch('/jobseeker/profile/location/', {
+                method: 'POST', headers: getHeaders(), body: JSON.stringify({ location_name: name })
+            });
+            const d = await res.json();
+            if (d.success) el.querySelector('.loc-id').value = d.data.location_id;
+        }
+    }
+
+    // Experiences (POST new, PATCH existing)
+    for (const el of document.querySelectorAll('.exp-item')) {
+        const id = el.querySelector('.exp-id').value;
+        const payload = {
+            company_name: el.querySelector('.exp-company').value.trim(),
+            role: el.querySelector('.exp-role').value.trim(),
+            description: el.querySelector('.exp-desc').value.trim(),
+            employment_type: el.querySelector('.exp-type').value,
+            start_date: el.querySelector('.exp-start').value,
+            is_current: el.querySelector('.exp-current').checked,
+            end_date: el.querySelector('.exp-current').checked ? null : (el.querySelector('.exp-end').value || null)
+        };
+        
+        if (!payload.company_name || !payload.role || !payload.start_date) continue; // Skip incomplete
+
+        const url = id ? `/jobseeker/profile/experience/${id}/` : `/jobseeker/profile/experience/`;
+        const method = id ? 'PATCH' : 'POST';
+
+        const res = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(payload) });
+        const d = await res.json();
+        if (!id && d.success) el.querySelector('.exp-id').value = d.data.experience_id;
+    }
+
+    // Educations (POST new, PATCH existing)
+    for (const el of document.querySelectorAll('.edu-item')) {
+        const id = el.querySelector('.edu-id').value;
+        const payload = {
+            qualification: el.querySelector('.edu-qualification').value.trim(),
+            field_of_study: el.querySelector('.edu-field').value.trim(),
+            institution: el.querySelector('.edu-institution').value.trim(),
+            start_year: parseInt(el.querySelector('.edu-start').value),
+            is_current: el.querySelector('.edu-current').checked,
+            end_year: el.querySelector('.edu-current').checked ? null : (parseInt(el.querySelector('.edu-end').value) || null)
+        };
+
+        if (!payload.qualification || !payload.field_of_study || !payload.institution || !payload.start_year) continue;
+
+        const url = id ? `/jobseeker/profile/education/${id}/` : `/jobseeker/profile/education/`;
+        const method = id ? 'PATCH' : 'POST';
+
+        const res = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(payload) });
+        const d = await res.json();
+        if (!id && d.success) el.querySelector('.edu-id').value = d.data.education_id;
+    }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+
+{% endblock %}
