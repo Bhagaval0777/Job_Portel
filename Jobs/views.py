@@ -1,398 +1,678 @@
-from django.shortcuts import render
-from rest_framework import status
-from rest_framework.response import Response
-# Create your views here.
+from django.core.cache import cache
+from django.db import transaction
+
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated,AllowAny
-from models import Job,Category
-from serializers import JobListSerializer,JobSerializer,CategorySerializer
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+
+from Jobs.models import Job, Category
+from Jobs.serializers import (
+    JobCreateSerializer,
+    JobListSerializer,
+    JobUpdateSerializer,
+    CategoryCreateSerializer,
+    CategoryUpdateSerializer
+)
+
+from Jobs.utils import (
+    CategoryPagination,
+    CategoryService,
+    CACHE_TIMEOUT
+)
+
 import logging
-from django.shortcuts import get_object_or_404
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("jobs")
 
-def get_recruiter(user):
-    """
-    Returns the Recruiter record linked to this user, or None.
-    This reaches into the recruiter app — your teammate's model.
-    If they named the related_name differently, adjust 'recruiter' below.
-    """
-    return getattr(user, 'recruiter', None)
- 
-def is_recruiter_for_job(user, job):
-    """
-    Returns True if the user is a recruiter who belongs to the
-    same company that owns the job.
-    """
-    recruiter = get_recruiter(user)
-    if not recruiter:
-        return False
-    return recruiter.company == job.company
- 
-#-----Category Views--------------------------------------------
+class CategorySearchAPIView(APIView):
 
-class CategoryListView(APIView):
-    """
-    GET /api/v1/jobs/categories/
-    Public — anyone can list categories.
-    POST /api/v1/jobs/categories/  — admin and recruitor only (create new category)
-    """
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return [AllowAny()]
-        return [IsAuthenticated()]
-    
-    def get(self,request):
-        categories=Category.objects.all()
-        serializer_instance=CategorySerializer(categories,many=True)
-        return Response(serializer_instance.data)
-    
-    def post(self,request):
-        serializer_instance=CategorySerializer(data=request.data)
-        if serializer_instance.is_valid():
-            serializer_instance.save()
-            return Response(serializer_instance.data,status=status.HTTP_201_CREATED)
-        return Response(serializer_instance.errors,status=status.HTTP_400_BAD_REQUEST)
-    
-#-----Job List + Create----------------
+    permission_classes = [IsAuthenticated]
+    pagination_class = CategoryPagination
 
-class JobListCreateView(APIView):
-    """
-    GET  /api/v1/jobs/           — public list of all open jobs
-    POST /api/v1/jobs/           — recruiter creates a new job (draft by default)
-    """
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return [AllowAny()]
-        return [IsAuthenticated()]
- 
     def get(self, request):
-        """
-        Returns paginated list of open (non-draft, non-closed) jobs.
-        Supports query params:
-          ?category=  ?location=  ?job_type=  ?experience_level=
-          ?q=         (search in title)
-          ?sort=      latest (default) | salary_high | salary_low
-        """
+
         try:
-            jobs = Job.objects.filter(status=Job.Status.OPEN).select_related(
-                'company', 'category', 'recruiter__user'
+
+            query = request.GET.get("q", "").strip()
+            page_number = request.GET.get("page", 1)
+
+            cache_key = f"category_search_{query}_{page_number}"
+
+            cached_data = cache.get(cache_key)
+
+            if cached_data:
+
+                logger.info(
+                    f"Category search cache hit: {cache_key}"
+                )
+
+                return Response(cached_data)
+
+            queryset = Category.objects.all()
+
+            if query:
+                queryset = queryset.filter(
+                    slug__istartswith=query
+                )
+
+            queryset = queryset.order_by("name")
+
+            paginator = self.pagination_class()
+
+            page = paginator.paginate_queryset(
+                queryset,
+                request
             )
- 
-            # Search by title
-            q = request.query_params.get('q', '').strip()
-            if q:
-                jobs = jobs.filter(title__icontains=q)
- 
-            # Filters
-            category = request.query_params.get('category')
-            if category:
-                jobs = jobs.filter(category__slug=category)
- 
-            location = request.query_params.get('location', '').strip()
-            if location:
-                jobs = jobs.filter(location__icontains=location)
- 
-            job_type = request.query_params.get('job_type')
-            if job_type:
-                jobs = jobs.filter(job_type=job_type)
- 
-            exp_level = request.query_params.get('experience_level')
-            if exp_level:
-                jobs = jobs.filter(experience_level=exp_level)
- 
-            salary_min = request.query_params.get('salary_min')
-            if salary_min:
-                jobs = jobs.filter(salary_min__gte=salary_min)
- 
-            salary_max = request.query_params.get('salary_max')
-            if salary_max:
-                jobs = jobs.filter(salary_max__lte=salary_max)
- 
-            # Sorting
-            sort = request.query_params.get('sort', 'latest')
-            if sort == 'salary_high':
-                jobs = jobs.order_by('-salary_max')
-            elif sort == 'salary_low':
-                jobs = jobs.order_by('salary_min')
-            else:
-                jobs = jobs.order_by('-is_featured', '-created_at')
- 
-            serializer = JobListSerializer(
-                jobs, many=True, context={'request': request}
+
+            results = [
+                {
+                    "category_id": item.category_id,
+                    "name": item.name,
+                    "slug": item.slug
+                }
+                for item in page
+            ]
+
+            response_data = {
+                "success": True,
+                "results": results
+            }
+
+            cache.set(
+                cache_key,
+                response_data,
+                CACHE_TIMEOUT
             )
-            return Response({'count': jobs.count(), 'results': serializer.data})
- 
+
+            logger.info(
+                f"Category search success: {query}"
+            )
+
+            return paginator.get_paginated_response(
+                response_data
+            )
+
         except Exception as e:
-            logger.error(f'Job list GET error: {e}', exc_info=True)
-            return Response(
-                {'error': 'Something went wrong.'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+            logger.exception(
+                f"Category search failed: {str(e)}"
             )
- 
-    def post(self, request):
-        """
-        Recruiter creates a new job.
-        recruiter and company are set automatically — never from request body.
-        New jobs always start as 'draft'.
-        """
-        # Role check
-        if getattr(request.user, 'role', None) != 'recruiter':
-            return Response(
-                {'error': 'Only recruiters can post jobs.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
- 
-        # Get the recruiter record linked to this user
-        recruiter = get_recruiter(request.user)
-        if not recruiter:
+
             return Response(
                 {
-                    'error': (
-                        'You are not linked to any company. '
-                        'Please complete your recruiter profile first.'
-                    )
+                    "success": False,
+                    "message": "Internal server error"
                 },
-                status=status.HTTP_403_FORBIDDEN,
-            )
- 
-        try:
-            serializer = JobSerializer(
-                data=request.data,
-                context={'request': request},
-            )
-            if serializer.is_valid():
-                # Inject recruiter and company — not from request body
-                serializer.save(
-                    recruiter=recruiter,
-                    company=recruiter.company,
-                    status=Job.Status.DRAFT,   # always starts as draft
-                )
-                return Response(
-                    {
-                        'message': 'Job created as draft. Use PATCH /status/ to publish.',
-                        'data': serializer.data,
-                    },
-                    status=status.HTTP_201_CREATED,
-                )
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
- 
-        except Exception as e:
-            logger.error(
-                f'Job POST error for user {request.user.id}: {e}', exc_info=True
-            )
-            return Response(
-                {'error': 'Something went wrong.'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-# ─── Job Detail + Update + Delete ────────────────────────────────────────────
- 
-class JobDetailView(APIView):
-    """
-    GET    /api/v1/jobs/{id}/   — public, increments view_count
-    PUT    /api/v1/jobs/{id}/   — full update (recruiter, own company only)
-    PATCH  /api/v1/jobs/{id}/   — partial update
-    DELETE /api/v1/jobs/{id}/   — delete (recruiter owner or admin)
-    """
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return [AllowAny()]
-        return [IsAuthenticated()]
- 
-    def get(self, request, job_id):
-        job = get_object_or_404(
-            Job.objects.select_related('company', 'category', 'recruiter__user'),
-            pk=job_id,
-        )
- 
-        # Non-open jobs visible to recruiter of that company and admins only
-        if job.status != Job.Status.OPEN:
-            if not request.user.is_authenticated:
-                return Response(
-                    {'error': 'This job is not currently available.'},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
-            if not (request.user.is_superuser or is_recruiter_for_job(request.user, job)):
-                return Response(
-                    {'error': 'This job is not currently available.'},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
- 
-        # Atomic view count increment
-        job.increment_view_count()
- 
-        serializer = JobSerializer(job, context={'request': request})
-        return Response(serializer.data)
- 
-    def put(self, request, job_id):
-        job = get_object_or_404(Job, pk=job_id)
-        return self._update(request, job, partial=False)
- 
-    def patch(self, request, job_id):
-        job = get_object_or_404(Job, pk=job_id)
-        return self._update(request, job, partial=True)
- 
-    def _update(self, request, job, partial):
-        # Admin can update anything
-        # Recruiter can only update jobs belonging to their company
-        if not request.user.is_superuser:
-            if not is_recruiter_for_job(request.user, job):
-                return Response(
-                    {'error': 'You can only edit jobs from your own company.'},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
- 
-        try:
-            serializer = JobSerializer(
-                job,
-                data=request.data,
-                context={'request': request},
-                partial=partial,
-            )
-            if serializer.is_valid():
-                serializer.save()
-                return Response(
-                    {'message': 'Job updated successfully.', 'data': serializer.data}
-                )
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
- 
-        except Exception as e:
-            logger.error(f'Job update error {job.id}: {e}', exc_info=True)
-            return Response(
-                {'error': 'Something went wrong.'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
- 
-    def delete(self, request, job_id):
-        job = get_object_or_404(Job, pk=job_id)
- 
-        # Permission check
-        if not request.user.is_superuser:
-            if not is_recruiter_for_job(request.user, job):
-                return Response(
-                    {'error': 'You can only delete jobs from your own company.'},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
- 
-        try:
-            job_title = job.title
-            job.delete()
-            return Response(
-                {'message': f'Job "{job_title}" deleted successfully.'},
-                status=status.HTTP_200_OK,
-            )
-        except Exception as e:
-            logger.error(f'Job delete error {job_id}: {e}', exc_info=True)
-            return Response(
-                {'error': 'Something went wrong.'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
- 
- 
-# ─── Job Status Control ───────────────────────────────────────────────────────
- 
-class JobStatusView(APIView):
-    """
-    PATCH /api/v1/jobs/{id}/status/
-    Controls the job status lifecycle: draft → open → closed
- 
-    Body: { "status": "open" }   or   { "status": "closed" }
-    """
+
+class CategoryCreateShowAPIView(APIView):
+
     permission_classes = [IsAuthenticated]
- 
-    # Valid transitions — prevents jumping from closed back to draft etc.
-    VALID_TRANSITIONS = {
-        Job.Status.DRAFT:  [Job.Status.OPEN],
-        Job.Status.OPEN:   [Job.Status.CLOSED],
-        Job.Status.CLOSED: [],   # closed is terminal — only admin can reopen
-    }
- 
-    def patch(self, request, job_id):
-        job = get_object_or_404(Job, pk=job_id)
- 
-        # Permission check
-        if not request.user.is_superuser:
-            if not is_recruiter_for_job(request.user, job):
-                return Response(
-                    {'error': 'You can only manage jobs from your own company.'},
-                    status=status.HTTP_403_FORBIDDEN,
+
+    def post(self, request):
+
+        try:
+
+            serializer = CategoryCreateSerializer(
+                data=request.data
+            )
+
+            if serializer.is_valid():
+
+                name = serializer.validated_data["name"]
+
+                category, created = CategoryService.get_or_create(
+                    name=name
                 )
- 
-        new_status = request.data.get('status', '').strip()
- 
-        if not new_status:
-            return Response(
-                {'error': 'status field is required.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
- 
-        valid_choices = [c[0] for c in Job.Status.choices]
-        if new_status not in valid_choices:
-            return Response(
-                {'error': f'Invalid status. Choose from: {valid_choices}'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
- 
-        # Admins can set any status; recruiters follow transition rules
-        if not request.user.is_superuser:
-            allowed = self.VALID_TRANSITIONS.get(job.status, [])
-            if new_status not in allowed:
+
+                logger.info(
+                    f"Category create attempted"
+                )
+
                 return Response(
                     {
-                        'error': (
-                            f'Cannot change status from "{job.status}" to "{new_status}". '
-                            f'Allowed transitions: {allowed or "none"}'
+                        "success": True,
+                        "message": (
+                            "Created"
+                            if created
+                            else "Already exists"
+                        ),
+                        "data": {
+                            "category_id": category.category_id,
+                            "name": category.name,
+                            "slug": category.slug
+                        }
+                    },
+                    status=(
+                        status.HTTP_201_CREATED
+                        if created
+                        else status.HTTP_200_OK
+                    )
+                )
+
+            logger.warning(
+                f"Category validation failed: "
+                f"{serializer.errors}"
+            )
+
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        except Exception as e:
+
+            logger.exception(
+                f"Category create failed: {str(e)}"
+            )
+
+            return Response(
+                {
+                    "success": False,
+                    "message": "Internal server error"
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class CategoryListUpdateDeleteAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        try:
+
+            data = list(
+                Category.objects.all().values(
+                    "category_id",
+                    "name",
+                    "slug"
+                )
+            )
+
+            logger.info(
+                f"Category list fetched"
+            )
+
+            return Response(
+                {
+                    "success": True,
+                    "data": data
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+
+            logger.exception(
+                f"Category list failed: {str(e)}"
+            )
+
+            return Response(
+                {
+                    "success": False
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def put(self, request, pk):
+
+        try:
+
+            category = Category.objects.get(pk=pk)
+
+            serializer = CategoryUpdateSerializer(
+                category,
+                data=request.data
+            )
+
+            if serializer.is_valid():
+
+                serializer.save()
+
+                logger.info(
+                    f"Category updated: {pk}"
+                )
+
+                return Response(
+                    {
+                        "success": True,
+                        "data": serializer.data
+                    },
+                    status=status.HTTP_200_OK
+                )
+
+            logger.warning(
+                f"Category update validation failed"
+            )
+
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        except Category.DoesNotExist:
+
+            logger.warning(
+                f"Category not found: {pk}"
+            )
+
+            return Response(
+                {
+                    "message": "Not found"
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        except Exception as e:
+
+            logger.exception(
+                f"Category update failed: {str(e)}"
+            )
+
+            return Response(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def delete(self, request, pk):
+
+        try:
+
+            category = Category.objects.get(pk=pk)
+
+            category.delete()
+
+            logger.info(
+                f"Category deleted: {pk}"
+            )
+
+            return Response(
+                status=status.HTTP_204_NO_CONTENT
+            )
+
+        except Category.DoesNotExist:
+
+            logger.warning(
+                f"Category not found: {pk}"
+            )
+
+            return Response(
+                {
+                    "message": "Not found"
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        except Exception as e:
+
+            logger.exception(
+                f"Category delete failed: {str(e)}"
+            )
+
+            return Response(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class JobListCreateAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        try:
+
+            queryset = Job.objects.select_related(
+                "category",
+                "recruiter"
+            ).filter(recruiter=request.user)
+
+            serializer = JobListSerializer(
+                queryset,
+                many=True
+            )
+
+            logger.info(
+                f"Job list fetched"
+            )
+
+            return Response(
+                {
+                    "success": True,
+                    "count": len(serializer.data),
+                    "data": serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+
+            logger.exception(
+                f"Job list failed: {str(e)}"
+            )
+
+            return Response(
+                {
+                    "success": False,
+                    "message": "Unable to fetch jobs"
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def post(self, request):
+
+        try:
+
+            serializer = JobCreateSerializer(
+                data=request.data
+            )
+
+            if serializer.is_valid():
+
+                validated_data = serializer.validated_data
+
+                validated_data["recruiter"] = request.user
+
+                with transaction.atomic():
+
+                    job = Job.objects.create(
+                        **validated_data
+                    )
+
+                logger.info(
+                    f"Job created: {job.job_id}"
+                )
+
+                return Response(
+                    {
+                        "success": True,
+                        "message": "Job created successfully",
+                        "data": JobListSerializer(job).data
+                    },
+                    status=status.HTTP_201_CREATED
+                )
+
+            logger.warning(
+                f"Job create validation failed"
+            )
+
+            return Response(
+                {
+                    "success": False,
+                    "errors": serializer.errors
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        except Exception as e:
+
+            logger.exception(
+                f"Job create failed: {str(e)}"
+            )
+
+            return Response(
+                {
+                    "success": False,
+                    "message": "Internal server error"
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class JobRetrieveUpdateDeleteAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, title_slug, user):
+
+        try:
+
+            return Job.objects.select_related(
+                "category",
+                "recruiter"
+            ).get(
+                title_slug=title_slug,
+                recruiter=user
+            )
+
+        except Job.DoesNotExist:
+
+            logger.warning(
+                f"Job not found or unauthorized: "
+                f"{title_slug}"
+            )
+
+            return None
+
+    def get(self, request):
+
+        try:
+
+            title_slug = request.GET.get("title_slug")
+
+            if title_slug:
+
+                job = self.get_object(
+                    title_slug,
+                    request.user
+                )
+
+                if not job:
+
+                    return Response(
+                        {
+                            "success": False,
+                            "message": (
+                                "Job not found "
+                                "or access denied"
+                            )
+                        },
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
+                serializer = JobListSerializer(job)
+
+                logger.info(
+                    f"Single job retrieved: "
+                    f"{title_slug}"
+                )
+
+                return Response(
+                    {
+                        "success": True,
+                        "data": serializer.data
+                    },
+                    status=status.HTTP_200_OK
+                )
+            
+            queryset = Job.objects.select_related(
+                "category",
+                "recruiter"
+            ).filter(
+                recruiter=request.user
+            ).order_by("-created_at")
+
+            serializer = JobListSerializer(
+                queryset,
+                many=True
+            )
+
+            logger.info(
+                f"All recruiter jobs fetched:"
+            )
+
+            return Response(
+                {
+                    "success": True,
+                    "count": len(serializer.data),
+                    "data": serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+
+            logger.exception(
+                f"Job retrieve failed: {str(e)}"
+            )
+
+            return Response(
+                {
+                    "success": False,
+                    "message": "Internal server error"
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def patch(self, request):
+
+        try:
+            title_slug = request.GET.get("title_slug")
+
+            job = self.get_object(
+                title_slug,
+                request.user
+            )
+
+            if not job:
+
+                return Response(
+                    {
+                        "success": False,
+                        "message": (
+                            "Job not found "
+                            "or access denied"
                         )
                     },
-                    status=status.HTTP_400_BAD_REQUEST,
+                    status=status.HTTP_404_NOT_FOUND
                 )
- 
-        job.status = new_status
-        job.save(update_fields=['status', 'updated_at'])
- 
-        return Response(
-            {
-                'message': f'Job status updated to "{new_status}".',
-                'job_id': job.id,
-                'status': job.status,
-            }
-        )
- 
- 
-# ─── Recruiter's Own Job Listings ────────────────────────────────────────────
- 
-class RecruiterJobListView(APIView):
-    """
-    GET /api/v1/jobs/my-jobs/
-    Returns all jobs posted by the authenticated recruiter's company.
-    Supports ?status= filter to show draft/open/closed separately.
-    """
-    permission_classes = [IsAuthenticated]
- 
-    def get(self, request):
-        if getattr(request.user, 'role', None) != 'recruiter':
-            return Response(
-                {'error': 'Only recruiters can access this endpoint.'},
-                status=status.HTTP_403_FORBIDDEN,
+
+            serializer = JobUpdateSerializer(
+                job,
+                data=request.data,
+                partial=True
             )
- 
-        recruiter = get_recruiter(request.user)
-        if not recruiter:
+
+            if serializer.is_valid():
+
+                new_status = request.data.get("status")
+
+                valid_statuses = [
+                    choice[0]
+                    for choice in Job.Status.choices
+                ]
+
+                if new_status:
+
+                    if new_status not in valid_statuses:
+
+                        logger.warning(
+                            f"Invalid status update: "
+                            f"{new_status}"
+                        )
+
+                        return Response(
+                            {
+                                "success": False,
+                                "message": "Invalid status",
+                                "valid_statuses": valid_statuses
+                            },
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+                with transaction.atomic():
+
+                    serializer.save()
+
+                logger.info(
+                    f"Job updated: {title_slug}"
+                )
+
+                return Response(
+                    {
+                        "success": True,
+                        "message": (
+                            "Job updated successfully"
+                        ),
+                        "data": serializer.data
+                    },
+                    status=status.HTTP_200_OK
+                )
+
             return Response(
-                {'error': 'Recruiter profile not found.'},
-                status=status.HTTP_404_NOT_FOUND,
+                {
+                    "success": False,
+                    "errors": serializer.errors
+                },
+                status=status.HTTP_400_BAD_REQUEST
             )
- 
-        jobs = Job.objects.filter(company=recruiter.company).select_related(
-            'category', 'recruiter__user'
-        )
- 
-        # Optional status filter
-        filter_status = request.query_params.get('status')
-        if filter_status:
-            jobs = jobs.filter(status=filter_status)
- 
-        serializer = JobListSerializer(jobs, many=True, context={'request': request})
-        return Response({'count': jobs.count(), 'results': serializer.data})
- 
+
+        except Exception as e:
+
+            logger.exception(
+                f"Job patch failed: {str(e)}"
+            )
+
+            return Response(
+                {
+                    "success": False,
+                    "message": "Internal server error"
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def delete(self, request):
+
+        try:
+            title_slug = request.GET.get("title_slug")
+
+            job = self.get_object(
+                title_slug,
+                request.user
+            )
+
+            if not job:
+
+                return Response(
+                    {
+                        "success": False,
+                        "message": (
+                            "Job not found "
+                            "or access denied"
+                        )
+                    },
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            with transaction.atomic():
+
+                job.delete()
+
+            logger.info(
+                f"Job deleted: {title_slug}"
+            )
+
+            return Response(
+                {
+                    "success": True,
+                    "message": (
+                        "Job deleted successfully"
+                    )
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+
+            logger.exception(
+                f"Job delete failed: {str(e)}"
+            )
+
+            return Response(
+                {
+                    "success": False,
+                    "message": "Internal server error"
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

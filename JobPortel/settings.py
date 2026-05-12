@@ -234,14 +234,16 @@ if not os.path.exists(LOG_DIR):
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+
     'formatters': {
         'standard': {
             'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
         },
     },
+
     'handlers': {
         'file': {
-            'level': 'INFO',  
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': os.path.join(LOG_DIR, 'users_activity.log'),
             'formatter': 'standard',
@@ -263,9 +265,18 @@ LOGGING = {
             'filename': os.path.join(LOG_DIR, 'jobseeker_activity.log'),
             'formatter': 'standard',
         },
+
+        # ✅ NEW
+        'jobs_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOG_DIR, 'jobs.log'),
+            'formatter': 'standard',
+        },
     },
+
     'loggers': {
-        'users': { 
+        'users': {
             'handlers': ['file', 'console'],
             'level': 'DEBUG',
             'propagate': True,
@@ -278,6 +289,13 @@ LOGGING = {
         'jobseeker': {
             'handlers': ['jobseeker_file', 'console'],
             'level': 'DEBUG',
+            'propagate': True,
+        },
+
+        # ✅ NEW
+        'jobs': {
+            'handlers': ['jobs_file', 'console'],
+            'level': 'INFO',
             'propagate': True,
         },
     },
