@@ -46,10 +46,12 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',   # ASGI server
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
     'axes',
+    'channels', # WebSocket support
     'django_redis',# Caching
     'Users',
     'jobseeker',
@@ -57,7 +59,7 @@ INSTALLED_APPS = [
     'JobApplicationManagement',
     'Jobs',
     'recruiter',
-    
+    'notification',
 ]
 
 MIDDLEWARE = [
@@ -93,6 +95,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'JobPortel.wsgi.application'
+
+ASGI_APPLICATION = 'JobPortel.asgi.application' # ASGI application for WebSocket support
 
 
 # Database
@@ -324,9 +328,23 @@ CACHES = {
     }
 }
 
+# Channels (WebSockets)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [f"{REDIS_URL}/2"],  # use env instead of hardcoded
+        },
+    },
+}
+
+
 # Celery Broker
 CELERY_BROKER_URL = f"{REDIS_URL}/0"
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
+
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'
 
 #---------------------------------------------------------------------------------------
