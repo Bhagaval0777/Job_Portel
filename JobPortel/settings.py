@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'daphne',   # ASGI server
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
     'axes',
     'channels', # WebSocket support
     'django_redis',# Caching
@@ -65,12 +66,12 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'JobPortel.middleware.SilentTokenRefreshMiddleware',
     'axes.middleware.AxesMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -171,30 +172,20 @@ REST_FRAMEWORK = {
     # Authentication and permissions
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'Users.authentication.CustomJWTAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
 }
-
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'AUTH_COOKIE': 'access_token',
-    # Cookie name for refresh token
-    'AUTH_COOKIE_REFRESH': 'refresh_token',
-    # Set to True in production (HTTPS)
-    'AUTH_COOKIE_SECURE': False,
-    # Prevents JS access (XSS protection)
-    'AUTH_COOKIE_HTTP_ONLY': True,
-    # Where the cookie is valid
-    'AUTH_COOKIE_PATH': '/',
-    # CSRF protection
-    'AUTH_COOKIE_SAMESITE': 'Lax',
-    # If your PK is 'user_id', change this to 'user_id'
-    'USER_ID_FIELD': 'user_id',
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=3),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'user_id', # Ensure your Users model has 'user_id' as the PK
     'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
 AUTHENTICATION_BACKENDS = [
@@ -203,25 +194,19 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
+# Keep your existing limits
 AXES_FAILURE_LIMIT = 3
-
-# Lockout duration
 AXES_COOLOFF_TIME = timedelta(minutes=15)
-AXES_USE_ATTEMPT_EXPIRATION = True
 
-# Reset attempts on a successful login (Default is True, but good to be explicit)
+# ADD THESE INSTEAD:
+AXES_RAISE_PERMISSION_DENIED = True   # Forces an exception your code can catch
+AXES_LOCKOUT_CALLABLE = None          # Disables the default HTML redirect
 AXES_RESET_ON_SUCCESS = True
-
 AXES_LOCKOUT_STRATEGY = 'axes.strategies.UsernameAndIPStrategy'
 
-# The URL where the user will be sent (must match your users app route)
-AXES_LOCKOUT_URL = '/users/locked/'
 
-# Logging configuration
+#----------------------------------------------------------------------------------------                                                  
 
-
-LOG_DIR = os.path.join(BASE_DIR, 'logs')
-#----------------------------------------------------------------------------------------
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -253,12 +238,6 @@ LOGGING = {
             'filename': os.path.join(LOG_DIR, 'users_activity.log'),
             'formatter': 'standard',
         },
-        'refresh_file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(LOG_DIR, 'silent_refresh.log'),
-            'formatter': 'standard',
-        },
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
@@ -284,23 +263,6 @@ LOGGING = {
         'users': {
             'handlers': ['file', 'console'],
             'level': 'DEBUG',
-            'propagate': True,
-        },
-        'silent_refresh': {
-            'handlers': ['refresh_file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'jobseeker': {
-            'handlers': ['jobseeker_file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-
-        # ✅ NEW
-        'jobs': {
-            'handlers': ['jobs_file', 'console'],
-            'level': 'INFO',
             'propagate': True,
         },
     },

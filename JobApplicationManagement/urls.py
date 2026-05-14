@@ -1,9 +1,14 @@
 from django.urls import path
-from . import views
+from .views import JobApplicationCreateListView, ApplicationDetailView, ApplicationListView, ApplicationDetailViewData
 
+app_name = 'applications'
 
 urlpatterns = [
-    path('api/apply/', views.ApplyJobAPIView.as_view(), name='api_apply_job'),
-    path('api/jobs/<int:job_id>/applicants/', views.JobApplicantsListAPIView.as_view(), name='api_job_applicants'),
-    path('api/applications/<int:pk>/status/', views.UpdateApplicationStatusAPIView.as_view(), name='api_update_status'),
+    path('apply/', ApplicationListView.as_view(), name='job-apply'),
+    # GET: List my applications | POST: Apply for a job
+    path('apply/data/', JobApplicationCreateListView.as_view(), name='job-apply-data'),
+    
+    # GET: View specific application details
+    path('apply/<int:application_id>/', ApplicationDetailView.as_view(), name='application-detail'),
+    path('apply/<int:application_id>/data/', ApplicationDetailViewData.as_view(), name='application-detail-data'),
 ]

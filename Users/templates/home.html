@@ -3,13 +3,16 @@
 {% block title %}Home - JobPortel{% endblock %}
 
 {% block content %}
-  <h2>User Dashboard</h2>
-  <div id="content">
-    <p>Loading user info...</p>
-  </div>
+<div class="container" style="padding: 40px; font-family: sans-serif;">
+    <h2>User Dashboard</h2>
+    <hr>
+    <div id="content">
+        <p>Verifying authentication...</p>
+    </div>
+</div>
 
-  <script>
-    // 1. Helper to grab the CSRF token from cookies
+<script>
+    // 1. Helper to grab the CSRF token from cookies (Required for POST requests)
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -25,75 +28,111 @@
         return cookieValue;
     }
 
-    // 2. Optimized Fetch for Middleware-based Auth
+    /**
+     * 2. JWT-Aware Fetch Function
+     * Automatically attaches the Bearer token from localStorage
+     */
     async function authFetch(url, options = {}) {
-        options.credentials = 'same-origin'; // Vital to send/receive cookies
+        const accessToken = localStorage.getItem('access_token');
         
+        // If no access token is found locally, redirect to login immediately
+        if (!accessToken) {
+            window.location.href = '/users/login/';
+            return null;
+        }
+
+        // Prepare headers with Authorization and CSRF
         options.headers = {
             ...options.headers,
+            'Authorization': `Bearer ${accessToken}`, 
             'X-CSRFToken': getCookie('csrftoken'),
             'Content-Type': 'application/json',
         };
 
-        const response = await fetch(url, options);
+        try {
+            const response = await fetch(url, options);
 
-        // If Middleware failed to refresh or session is dead
-        if (response.status === 401 || response.status === 403) {
-            console.error("Authorization failed. Redirecting to login...");
-            return;
+            // Handle 401 (Unauthorized/Expired) or 403 (Forbidden)
+            if (response.status === 401 || response.status === 403) {
+                console.error("Session expired or invalid.");
+                localStorage.clear();
+                window.location.href = '/users/login/';
+                return null;
+            }
+
+            return response;
+        } catch (error) {
+            console.error("Network error:", error);
+            return null;
         }
-
-        return response;
     }
 
-    // 3. Main function to load data
+    /**
+     * 3. Main function to load User Data and update UI
+     */
     async function loadUser() {
         const container = document.getElementById('content');
         
-        try {
-            // Note: Use absolute path starting with /
-            const res = await authFetch('/users/details/');
-            
-            if (res && res.ok) {
-                const data = await res.json();
-                
-                // Inject the UI
-                container.innerHTML = `
-                    <p>Welcome, <strong id="user-display"></strong></p>
-                    <ul>
-                        <li><strong>ID:</strong> <span id="u-id"></span></li>
-                        <li><strong>Username:</strong> <span id="u-name"></span></li>
-                        <li><strong>Email:</strong> <span id="u-email"></span></li>
-                        <li><strong>Role:</strong> <span id="u-role"></span></li>
-                    </ul>
-                    <p><button id="logout-btn" style="color: red;">Log out</button></p>
-                `;
-
-                // Safe text injection
-                document.getElementById('user-display').textContent = data.user_email;
-                document.getElementById('u-name').textContent = data.user_email;
-                document.getElementById('u-email').textContent = data.user_email;
-                document.getElementById('u-id').textContent = data.user_id;
-                document.getElementById('u-role').textContent = data.role;
-
-                // Handle Logout click
-                document.getElementById('logout-btn').addEventListener('click', async () => {
-                    const logoutRes = await authFetch('/users/logout/', { method: 'POST' });
-                    if (logoutRes.ok) {
-                        window.location.href = '/users/login/';
-                    }
-                });
-
-            } else {
-                container.innerHTML = '<p>Session invalid. <a href="/users/login/">Please Login</a></p>';
+        // Fetch data from your DRF endpoint (e.g., UserDetailsView)
+        const res = await authFetch('/users/details/');
+        
+        if (res && res.ok) {
+            const data = await res.json();
+            if (data.role === 'recruiter') {
+                window.location.href = '/dashboard/recruiter/';
+                return; // Stop execution here
+            } else if (data.role === 'jobseeker') {
+                window.location.href = '/dashboard/jobseeker/';
+                return; // Stop execution here
             }
-        } catch (err) {
-            console.error("Fetch error:", err);
-            container.innerText = 'Error connecting to server. Check console for details.';
+            // Build the dynamic UI
+            container.innerHTML = `
+                <div style="background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb;">
+                    <p style="font-size: 1.2rem;">Welcome, <strong id="user-display"></strong>!</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 8px;"><strong>ID:</strong> <span id="u-id"></span></li>
+                        <li style="margin-bottom: 8px;"><strong>Email:</strong> <span id="u-email"></span></li>
+                        <li style="margin-bottom: 8px;"><strong>Account Role:</strong> <span id="u-role"></span></li>
+                    </ul>
+                    <button id="logout-btn" style="margin-top: 15px; padding: 10px 20px; background-color: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        Sign Out
+                    </button>
+                </div>
+            `;
+
+            // Securely inject text content to prevent XSS
+            document.getElementById('user-display').textContent = data.user_email || 'User';
+            document.getElementById('u-email').textContent = data.user_email;
+            document.getElementById('u-id').textContent = data.user_id;
+            document.getElementById('u-role').textContent = data.role || 'General User';
+
+            // Handle Logout Logic
+            document.getElementById('logout-btn').onclick = async () => {
+                const refreshToken = localStorage.getItem('refresh_token');
+                
+                // Optional: Blacklist the refresh token on the server
+                if (refreshToken) {
+                    await authFetch('/users/logout/', { 
+                        method: 'POST',
+                        body: JSON.stringify({ refresh: refreshToken })
+                    });
+                }
+
+                // Clear all local storage and redirect
+                localStorage.clear();
+                window.location.href = '/users/login/';
+            };
+
+        } else {
+            // Failure case if authFetch returns null or non-ok response
+            container.innerHTML = `
+                <p style="color: #991b1b;">Authentication failed. Redirecting to login...</p>
+            `;
+            setTimeout(() => { window.location.href = '/users/login/'; }, 1500);
         }
     }
 
-    // Initialize
+    // Initialize on page load
     document.addEventListener('DOMContentLoaded', loadUser);
-  </script>
+</script>
 {% endblock %}
