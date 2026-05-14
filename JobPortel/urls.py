@@ -24,4 +24,5 @@ urlpatterns = [
     path('applications/', include('JobApplicationManagement.urls')),
     path('recruiter/', include('recruiter.urls')),
     path('jobseeker/', include('jobseeker.urls')),
+    path('jobs/', include('Jobs.urls')),
 ]

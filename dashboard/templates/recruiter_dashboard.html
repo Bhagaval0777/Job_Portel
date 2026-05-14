@@ -1,127 +1,801 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recruiter Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        body { background-color: #f4f7f6; }
-        .stat-card { border: none; border-radius: 12px; color: white; transition: 0.3s; }
-        .stat-card:hover { transform: translateY(-5px); }
-        .bg-jobs { background: linear-gradient(45deg, #4e73df, #224abe); }
-        .bg-apps { background: linear-gradient(45deg, #1cc88a, #13855c); }
-        .bg-active { background: linear-gradient(45deg, #36b9cc, #258391); }
-        .bg-new { background: linear-gradient(45deg, #f6c23e, #dda20a); }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
 
-<div class="container py-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold">Recruiter Dashboard</h2>
-            <p class="text-muted">Manage your job postings and track incoming talent.</p>
+{% block content %}
+<style>
+    :root {
+        --primary-color: #2563eb;
+        --primary-dark: #1e40af;
+        --primary-light: #dbeafe;
+        --success-color: #10b981;
+        --success-light: #d1fae5;
+        --warning-color: #f59e0b;
+        --warning-light: #fef3c7;
+        --danger-color: #ef4444;
+        --danger-light: #fee2e2;
+        --info-color: #0891b2;
+        --info-light: #cffafe;
+        --neutral-50: #f9fafb;
+        --neutral-100: #f3f4f6;
+        --neutral-200: #e5e7eb;
+        --neutral-300: #d1d5db;
+        --neutral-600: #4b5563;
+        --neutral-700: #374151;
+        --neutral-900: #111827;
+    }
+    
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body { 
+        background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 100%);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        color: var(--neutral-700);
+    }
+    
+    .dashboard-container {
+        min-height: 100vh;
+        padding: 2rem;
+    }
+    
+    /* Header Section */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3rem;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+    
+    .header-content h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--neutral-900);
+        letter-spacing: -0.5px;
+    }
+    
+    .header-content p {
+        font-size: 0.95rem;
+        color: var(--neutral-600);
+        margin-top: 0.5rem;
+    }
+    
+    .header-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    }
+    
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    }
+    
+    .btn-secondary {
+        background-color: var(--neutral-100);
+        color: var(--neutral-700);
+        border: 1px solid var(--neutral-200);
+    }
+    
+    .btn-secondary:hover {
+        background-color: var(--neutral-200);
+        transform: translateY(-2px);
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--neutral-200);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+        border-color: var(--primary-light);
+    }
+    
+    .stat-card.jobs::before {
+        background: linear-gradient(90deg, #2563eb, #1e40af);
+    }
+    
+    .stat-card.applicants::before {
+        background: linear-gradient(90deg, #10b981, #047857);
+    }
+    
+    .stat-card.active::before {
+        background: linear-gradient(90deg, #f59e0b, #d97706);
+    }
+    
+    .stat-card.new::before {
+        background: linear-gradient(90deg, #ef4444, #dc2626);
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-card.jobs .stat-icon {
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+    }
+    
+    .stat-card.applicants .stat-icon {
+        background-color: var(--success-light);
+        color: var(--success-color);
+    }
+    
+    .stat-card.active .stat-icon {
+        background-color: var(--warning-light);
+        color: var(--warning-color);
+    }
+    
+    .stat-card.new .stat-icon {
+        background-color: var(--danger-light);
+        color: var(--danger-color);
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--neutral-600);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.75rem;
+    }
+    
+    .stat-value {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: var(--neutral-900);
+        line-height: 1;
+    }
+    
+    .stat-change {
+        font-size: 0.8rem;
+        margin-top: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .stat-change.positive {
+        color: var(--success-color);
+    }
+    
+    .stat-change.negative {
+        color: var(--danger-color);
+    }
+    
+    /* Profile Completion Card */
+    .profile-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--neutral-200);
+        margin-bottom: 2.5rem;
+    }
+    
+    .profile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+    
+    .profile-header h3 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--neutral-900);
+    }
+    
+    .profile-header p {
+        font-size: 0.85rem;
+        color: var(--neutral-600);
+        margin-top: 0.25rem;
+    }
+    
+    .completion-badge {
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .progress-bar-container {
+        background-color: var(--neutral-200);
+        height: 8px;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 0.75rem;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+        border-radius: 10px;
+        transition: width 0.3s ease;
+    }
+    
+    .progress-tips {
+        font-size: 0.85rem;
+        color: var(--neutral-600);
+    }
+    
+    /* Content Card */
+    .content-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--neutral-200);
+        overflow: hidden;
+    }
+    
+    .card-header {
+        background-color: var(--neutral-50);
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--neutral-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .card-header h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--neutral-900);
+        margin: 0;
+    }
+    
+    .filter-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .filter-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--neutral-200);
+        background-color: white;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--neutral-700);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .filter-btn:hover,
+    .filter-btn.active {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+    
+    .card-body {
+        padding: 0;
+    }
+    
+    /* Table Styling */
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .table thead {
+        background-color: var(--neutral-50);
+        border-bottom: 2px solid var(--neutral-200);
+    }
+    
+    .table th {
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--neutral-600);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .table td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--neutral-100);
+    }
+    
+    .table tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .table tbody tr:hover {
+        background-color: var(--neutral-50);
+    }
+    
+    .job-title {
+        font-weight: 700;
+        color: var(--neutral-900);
+        font-size: 0.95rem;
+    }
+    
+    .job-category {
+        font-size: 0.85rem;
+        color: var(--neutral-600);
+        margin-top: 0.25rem;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+    
+    .badge-open {
+        background-color: var(--success-light);
+        color: var(--success-color);
+    }
+    
+    .badge-closed {
+        background-color: var(--danger-light);
+        color: var(--danger-color);
+    }
+    
+    .badge-draft {
+        background-color: var(--warning-light);
+        color: var(--warning-color);
+    }
+    
+    .applicants-count {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+    
+    .date-posted {
+        font-size: 0.9rem;
+        color: var(--neutral-600);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .btn-action {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--neutral-200);
+        background-color: white;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--primary-color);
+        transition: all 0.2s ease;
+    }
+    
+    .btn-action:hover {
+        background-color: var(--primary-light);
+        border-color: var(--primary-color);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1.5rem;
+    }
+    
+    .empty-icon {
+        font-size: 3rem;
+        opacity: 0.3;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-text {
+        color: var(--neutral-600);
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 1rem;
+        }
+        
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .header-content h1 {
+            font-size: 1.5rem;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .table {
+            font-size: 0.85rem;
+        }
+        
+        .table th,
+        .table td {
+            padding: 0.75rem;
+        }
+        
+        .action-buttons {
+            flex-wrap: wrap;
+        }
+    }
+    
+    /* Loading Animation */
+    .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--neutral-200);
+        border-top-color: var(--primary-color);
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+<div class="dashboard-container">
+    <!-- Header Section -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1>Recruiter Dashboard</h1>
+            <p>Manage your job postings and track applicant pipeline</p>
         </div>
-        <!-- <a href="{% url 'jobs:job_list' %}" class="btn btn-primary shadow-sm">
-            <i class="bi bi-plus-lg me-2"></i>Post a New Job
-        </a> -->
+        <div class="header-actions">
+            <a href="#" class="btn btn-primary">
+                <span>➕</span> Post New Job
+            </a>
+            <button class="btn btn-secondary">
+                <span>⚙️</span> Settings
+            </button>
+        </div>
     </div>
 
-    <div class="card mb-4 border-0 shadow-sm">
-        <div class="card-body p-4">
-            <div class="d-flex justify-content-between mb-2">
-                <span class="fw-bold">Company Profile Completion</span>
-                <span class="text-primary">{{ profile_completion }}%</span>
+    <!-- Profile Completion Card -->
+    <div class="profile-card">
+        <div class="profile-header">
+            <div>
+                <h3>Company Profile Strength</h3>
+                <p>Complete profiles get 40% more qualified applicants</p>
             </div>
-            <div class="progress" style="height: 10px;">
-                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ profile_completion }}%"></div>
+            <span class="completion-badge" id="completion-text">0% Complete</span>
+        </div>
+        <div class="progress-bar-container">
+            <div id="completion-bar" class="progress-bar" style="width: 0%;"></div>
+        </div>
+        <div class="progress-tips">
+            <strong>💡 Pro Tip:</strong> Add a company logo, description, and culture to boost visibility and attract top talent.
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card jobs">
+            <div class="stat-icon">📋</div>
+            <div class="stat-label">Total Job Postings</div>
+            <div class="stat-value" id="stat-total-jobs">0</div>
+            <div class="stat-change positive">
+                <span>↑</span> Active on platform
+            </div>
+        </div>
+        <div class="stat-card applicants">
+            <div class="stat-icon">👥</div>
+            <div class="stat-label">Total Applicants</div>
+            <div class="stat-value" id="stat-total-apps">0</div>
+            <div class="stat-change positive">
+                <span>↑</span> This month
+            </div>
+        </div>
+        <div class="stat-card active">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-label">Active Roles</div>
+            <div class="stat-value" id="stat-active-jobs">0</div>
+            <div class="stat-change positive">
+                <span>↑</span> Open positions
+            </div>
+        </div>
+        <div class="stat-card new">
+            <div class="stat-icon">🆕</div>
+            <div class="stat-label">New Applications</div>
+            <div class="stat-value" id="stat-new-apps">0</div>
+            <div class="stat-change positive">
+                <span>↑</span> This week
             </div>
         </div>
     </div>
 
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card stat-card bg-jobs p-3 shadow-sm">
-                <div class="card-body">
-                    <h6 class="small text-uppercase">Total Jobs</h6>
-                    <h2 class="fw-bold">{{ status_summary.total_job_postings }}</h2>
-                </div>
+    <!-- Job Listings Table -->
+    <div class="content-card">
+        <div class="card-header">
+            <h2>Active Job Listings</h2>
+            <div class="filter-group">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="open">Open</button>
+                <button class="filter-btn" data-filter="closed">Closed</button>
+                <button class="filter-btn" data-filter="draft">Draft</button>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card stat-card bg-apps p-3 shadow-sm">
-                <div class="card-body">
-                    <h6 class="small text-uppercase">Applicants</h6>
-                    <h2 class="fw-bold">{{ status_summary.total_applicants_received }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card bg-active p-3 shadow-sm">
-                <div class="card-body">
-                    <h6 class="small text-uppercase">Active Postings</h6>
-                    <h2 class="fw-bold">{{ status_summary.active_postings }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card bg-new p-3 shadow-sm">
-                <div class="card-body">
-                    <h6 class="small text-uppercase">New (7 Days)</h6>
-                    <h2 class="fw-bold">{{ status_summary.new_this_week }}</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white py-3">
-            <h5 class="fw-bold mb-0">Your Job Postings</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-4">Job Title</th>
-                            <th>Status</th>
-                            <th>Applicants</th>
-                            <th>Posted Date</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for job in my_job_postings %}
-                        <tr>
-                            <td class="ps-4">
-                                <div class="fw-bold">{{ job.title }}</div>
-                                <div class="small text-muted">{{ job.category.name }}</div>
-                            </td>
-                            <td>
-                                <span class="badge {% if job.status == 'open' %}bg-success{% else %}bg-secondary{% endif %}">
-                                    {{ job.get_status_display }}
-                                </span>
-                            </td>
-                            <td><span class="fw-bold">{{ job.num_applicants }}</span> candidates</td>
-                            <td>{{ job.created_at|date:"M d, Y" }}</td>
-                            <td class="text-center">
-                                <a href="#" class="btn btn-sm btn-outline-primary">View Apps</a>
-                                <a href="#" class="btn btn-sm btn-light border"><i class="bi bi-pencil"></i></a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">You haven't posted any jobs yet.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Job Role</th>
+                        <th>Status</th>
+                        <th>Applicants</th>
+                        <th>Date Posted</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="job-table-body">
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <div class="spinner"></div>
+                            <p style="margin-top: 1rem; color: var(--neutral-600);">Loading your job listings...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-</body>
-</html>
+<script>
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadDashboardData();
+    initializeFilters();
+});
+
+// Load dashboard data
+async function loadDashboardData() {
+    try {
+        // Check if window.authFetch exists, fallback to regular fetch
+        const fetchFn = window.authFetch || fetch;
+        const response = await fetchFn('/dashboard/recruiter/data/', {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'include'
+        });
+        
+        if (!response || !response.ok) {
+            showError('Failed to load dashboard data');
+            return;
+        }
+        
+        const data = await response.json();
+        
+        // Update profile completion
+        const completion = data.profile_completion || 0;
+        document.getElementById('completion-text').textContent = `${completion}% Complete`;
+        document.getElementById('completion-bar').style.width = `${completion}%`;
+        
+        // Update stats
+        const summary = data.status_summary || {};
+        document.getElementById('stat-total-jobs').textContent = 
+            summary.total_job_postings || '0';
+        document.getElementById('stat-total-apps').textContent = 
+            summary.total_applicants_received || '0';
+        document.getElementById('stat-active-jobs').textContent = 
+            summary.active_postings || '0';
+        document.getElementById('stat-new-apps').textContent = 
+            summary.new_this_week || '0';
+        
+        // Populate job listings table
+        populateJobTable(data.my_job_postings || []);
+        
+    } catch (err) {
+        console.error('Dashboard Error:', err);
+        showError('Error connecting to server');
+    }
+}
+
+// Populate job listings table
+function populateJobTable(jobs) {
+    const tableBody = document.getElementById('job-table-body');
+    
+    if (!jobs || jobs.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <div class="empty-text">No job listings yet</div>
+                    <button class="btn btn-primary" onclick="window.location.href='#'">
+                        Post Your First Job
+                    </button>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tableBody.innerHTML = jobs.map(job => `
+        <tr>
+            <td>
+                <div class="job-title">${escapeHtml(job.title)}</div>
+                <div class="job-category">${escapeHtml(job.category || 'General')}</div>
+            </td>
+            <td>
+                <span class="badge badge-${escapeHtml(job.status).toLowerCase()}">
+                    ${escapeHtml(job.status || 'Draft').toUpperCase()}
+                </span>
+            </td>
+            <td>
+                <div class="applicants-count">
+                    <span>${job.num_applicants || 0}</span>
+                    <span style="color: var(--neutral-600); font-weight: 400;">candidates</span>
+                </div>
+            </td>
+            <td>
+                <span class="date-posted">${formatDate(job.created_at)}</span>
+            </td>
+            <td>
+                <div class="action-buttons" style="justify-content: flex-end;">
+                    <button class="btn-action" title="View Applications" onclick="window.location.href='/dashboard/${job.id}/candidates/'">
+                        👁️ View
+                    </button>
+                    <button class="btn-action" title="Edit Job">
+                        ✏️ Edit
+                    </button>
+                    <button class="btn-action" style="color: var(--danger-color); border-color: var(--danger-light);" title="Delete Job">
+                        🗑️ Delete
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Initialize filter buttons
+function initializeFilters() {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all buttons
+            filterBtns.forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            // Apply filter
+            applyFilter(this.dataset.filter);
+        });
+    });
+}
+
+// Apply filter to job listings
+function applyFilter(filter) {
+    const rows = document.querySelectorAll('#job-table-body tr');
+    rows.forEach(row => {
+        const statusCell = row.querySelector('.badge');
+        if (!statusCell) return;
+        
+        const status = statusCell.textContent.trim().toLowerCase();
+        
+        if (filter === 'all' || status === filter) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Utility: Format date
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    try {
+        const date = new Date(dateString);
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        if (date.toDateString() === today.toDateString()) {
+            return 'Today';
+        } else if (date.toDateString() === yesterday.toDateString()) {
+            return 'Yesterday';
+        } else {
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+            });
+        }
+    } catch (e) {
+        return 'N/A';
+    }
+}
+
+// Utility: Escape HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Utility: Show error message
+function showError(message) {
+    const tableBody = document.getElementById('job-table-body');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="5" class="empty-state">
+                <div class="empty-icon">⚠️</div>
+                <div class="empty-text">${escapeHtml(message)}</div>
+            </td>
+        </tr>
+    `;
+}
+
+// Polling: Refresh data every 30 seconds
+setInterval(() => {
+    loadDashboardData();
+}, 30000);
+</script>
+{% endblock %}

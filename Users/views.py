@@ -1,6 +1,7 @@
 import logging
+from tokenize import TokenError
+from django.core.exceptions import PermissionDenied
 
-from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -10,13 +11,14 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.authentication import JWTAuthentication
+
+
 
 from django_ratelimit.decorators import ratelimit
 from axes.handlers.proxy import AxesProxyHandler
 
 # Local/App Imports
+from Users.authentication import CustomJWTAuthentication
 from Users.models import Users  
 from Users.serializers import * 
 from .utils import *
@@ -26,12 +28,12 @@ logger = logging.getLogger('users')
 def register_page(request):
     return render(request, "register.html")
 
-def home_page(request):
-    """
-    Render the frontend home page. JavaScript on this page will call the
-    API (`home/`) to fetch the current user details if authenticated.
-    """
-    return render(request, 'home.html')
+# def home_page(request):
+#     """
+#     Render the frontend home page. JavaScript on this page will call the
+#     API (`home/`) to fetch the current user details if authenticated.
+#     """
+#     return render(request, 'home.html')
 
 @method_decorator(ratelimit(key='ip', rate='5/m', block=True), name='post')
 class UserRegistration(APIView):
@@ -167,127 +169,86 @@ class ResendOTP(APIView):
             logger.exception("Error in ResendOTP")
             return JsonResponse({"error": "Internal server error"}, status=500)
 
-# Login and Logout Views with Axes integration for lockout handling and detailed logging
-class LoginView(TokenObtainPairView):
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request):
         return render(request, 'login.html')
 
     def post(self, request, *args, **kwargs):
-        # 1. Pre-check: Check if already locked out
+        # 1. PRE-EMPTIVE CHECK: Is this user/IP already locked?
         if AxesProxyHandler.is_locked(request):
-            logger.warning(f"Login denied: IP {get_client_ip(request)} is already locked out.")
-            return Response(
-                {"detail": "Account locked. Please try again later."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        ip = get_client_ip(request)
-        ua = request.META.get('HTTP_USER_AGENT')
-        username_attempted = request.data.get('user_email', 'Unknown')
-        print(username_attempted)
+            logger.error(f"Access denied: Account is currently locked for IP:{get_client_ip(request)}- {request.data.get('email')}")
+            return Response({
+                "detail": "Account locked due to too many failed attempts. Please wait 15 minutes."
+            }, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            # 2. Call the parent post method (handles authentication)
-            response = super().post(request, *args, **kwargs)
-        except Exception as e:
-           
-            logger.error(f"Login failed for user '{username_attempted}' from IP {ip}. Reason: {str(e)}")
-
-            # 4. Post-check: Did this attempt trigger the lockout?
-            if AxesProxyHandler.is_locked(request):
-                logger.critical(f"SECURITY: IP {ip} has been locked out after failed attempt for user '{username_attempted}'.")
+            serializer = LoginSerializer(data=request.data, context={"request": request})
+            
+            if not serializer.is_valid():
+                # This attempt failed. Axes will record this failure.
+                logger.warning(f"Login failed: Invalid credentials for {request.data.get('email')}")
                 return Response(
-                    {"detail": "Too many attempts. Account locked."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            raise e
-
-        if response.status_code == 200:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid()
-            user = serializer.user
-
-            logger.info(f"Login successful: User '{user.user_email}' (ID: {user.user_id}) from IP {ip}")
-
-            access_token = response.data.get('access')
-            refresh_token = response.data.get('refresh')
-
-            if access_token and refresh_token:
-                cookie_settings = settings.SIMPLE_JWT
-                common_kwargs = {
-                    'httponly': cookie_settings['AUTH_COOKIE_HTTP_ONLY'],
-                    'secure': cookie_settings['AUTH_COOKIE_SECURE'],
-                    'samesite': cookie_settings['AUTH_COOKIE_SAMESITE'],
-                    'path': cookie_settings['AUTH_COOKIE_PATH'],
-                }
-
-                response.set_cookie(
-                    key=cookie_settings['AUTH_COOKIE'],
-                    value=access_token,
-                    **common_kwargs
-                )
-                response.set_cookie(
-                    key=cookie_settings['AUTH_COOKIE_REFRESH'],
-                    value=refresh_token,
-                    **common_kwargs
+                    {"detail": "Invalid email or password."}, 
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
-                # Remove tokens from body for extra security
-                response.data.pop('access', None)
-                response.data.pop('refresh', None)
+            # Success!
+            user = serializer.validated_data["user"]
+            refresh = RefreshToken.for_user(user)
+            
+            logger.info(f"User logged in: {user.user_email} - IP: {get_client_ip(request)}")
+            return Response({
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+            }, status=status.HTTP_200_OK)
 
-        return response
+        except PermissionDenied:
+            # Catching the exact moment the 3rd failure happens
+            return Response({
+                "detail": "Too many attempts. Your account is now locked for 15 minutes."
+            }, status=status.HTTP_403_FORBIDDEN)
 
 class LogoutView(APIView):
-    authentication_classes = []
-    permission_classes = (AllowAny,)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        response = Response(
-            {"detail": "Successfully logged out."},
-            status=status.HTTP_200_OK
-        )
-        ip = get_client_ip(request)
-        ua = request.META.get('HTTP_USER_AGENT')
-
         try:
-            refresh_token = request.COOKIES.get(
-                settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH']
-            )
-            if refresh_token:
-                token = RefreshToken(refresh_token)
-                user_id = token['user_id']
-                user_model = get_user_model()
-                print(user_model)
-                user = user_model.objects.filter(user_id=user_id).first()
-                print(user)
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response({"detail": "Refresh token required"}, status=status.HTTP_400_BAD_REQUEST)
 
-                if user:
-                    logger.info(f"Logout successful: User '{getattr(user, 'user_email', str(user))}' (ID: {getattr(user, 'user_id', user.pk)}) from IP {ip}")
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            
+            logger.info(f"User logged out: {request.user.user_email}")
+            return Response({"detail": "Logged out successfully"}, status=status.HTTP_200_OK)
+            
+        except TokenError as e:
+            logger.warning(f"Logout failed: Invalid token - {str(e)}")
+            return Response({"detail": "Token is invalid or expired"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.error(f"Logout error: {str(e)}")
+            return Response({"detail": "Internal server error"}, status=500)
 
-                token.blacklist()
-        except Exception:
-            pass
+from django.shortcuts import redirect    
+class HomeTemplateView(APIView):
+    permission_classes = [AllowAny] 
 
-        response.delete_cookie(
-            settings.SIMPLE_JWT['AUTH_COOKIE'],
-            path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH']
-        )
-        response.delete_cookie(
-            settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
-            path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH']
-        )
+    def get(self, request):
+        return render(request, 'home.html')
 
-        return response
-
+# 2. THE DATA VIEW (Provides the JSON)
 class UserDetailsView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CustomJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-def lockout_view(request):
-    logger.warning(f"Lockout page rendered for IP: {get_client_ip(request)}")
-    return render(request, 'lockout.html')
+        # This returns JSON that your JavaScript fetch() will receive
+        return Response({
+            "user_id": request.user.user_id,
+            "user_email": request.user.user_email,
+            "role": getattr(request.user, 'role', 'User') 
+        })

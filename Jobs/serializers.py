@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.utils import timezone
-from models import Job,Category
+from .models import Job,Category
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -101,6 +101,6 @@ class JobListSerializer(serializers.ModelSerializer):
             'salary_min', 'salary_max',
             'category_name', 'skills_required',
             'status', 'deadline',
-            'created_at'
+            'created_at','company_logo'
         ]
  
