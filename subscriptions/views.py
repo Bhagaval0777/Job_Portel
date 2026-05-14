@@ -23,7 +23,7 @@ from rest_framework.permissions import (
 )
 
 
-from accounts.permissions import IsRecruiter
+# from accounts.permissions import IsRecruiter
 from django.utils.timezone import now
 from django.shortcuts import render
 from django.shortcuts import redirect
