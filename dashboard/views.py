@@ -59,7 +59,8 @@ class jobseekerDashboardDataView(APIView):
             completion_rate = int((filled_count / total_count) * 100)
             
             # 2. Fetch Applications
-            all_apps = Application.objects.filter(jobseeker=profile).select_related('job__company')         
+            all_apps = Application.objects.filter(jobseeker=profile).select_related('job__company')      
+            print(all_apps)  # Debug: Check the generated SQL query
         else:
             # Handle user with no profile gracefully
             logger.error(f"User {user.user_email} has no JobSeekerProfile.")

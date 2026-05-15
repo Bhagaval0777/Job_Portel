@@ -2,17 +2,14 @@
 {% load static %}
 
 {% block content %}
-<!-- TOAST NOTIFICATION -->
 <div id="toast-notification" class="toast-popup"></div>
 
 <div class="max-w-7xl mx-auto space-y-6">
     <form id="profileForm">
         {% csrf_token %}
 
-        <!-- MAIN LAYOUT -->
         <div class="profile-layout">
 
-            <!-- LEFT SIDE -->
             <div class="left-column">
                 <div class="card sticky-card">
                     <h2 class="title">Personal Info</h2>
@@ -28,22 +25,18 @@
                         <label><input type="radio" name="gender" value="other"> Other</label>
                     </div>
                     
-                    <!-- Buttons with IDs for toggling -->
                     <button type="button" id="save-profile-btn" onclick="createProfile()" class="btn-save">
                         Save Profile
                     </button>
 
-                    <!-- Hidden by default -->
                     <button type="button" id="update-profile-btn" onclick="updateProfile()" class="btn-update mt-3 w-full hidden">
                         Update Profile
                     </button>
                 </div>
             </div>
 
-            <!-- RIGHT SIDE -->
             <div class="right-column">
 
-                <!-- SKILLS -->
                 <div class="card">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="title mb-0">Skills</h2>
@@ -52,7 +45,6 @@
                     <div id="skills-container"></div>
                 </div>
 
-                <!-- LOCATIONS -->
                 <div class="card">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="title mb-0">Locations</h2>
@@ -61,7 +53,6 @@
                     <div id="locations-container"></div>
                 </div>
 
-                <!-- EXPERIENCE -->
                 <div class="card">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="title mb-0">Experience</h2>
@@ -70,7 +61,6 @@
                     <div id="experience-container"></div>
                 </div>
 
-                <!-- EDUCATION -->
                 <div class="card">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="title mb-0">Education</h2>
@@ -290,14 +280,33 @@ body {
 </style>
 
 <script>
-// ─────────── HELPERS ───────────
-function getHeaders() {
-    return {
+// ─────────── AUTHENTICATION WRAPPER ───────────
+async function authFetch(url, options = {}) {
+    options.credentials = 'same-origin'; // Crucial for sending session cookies
+    options.headers = {
+        ...options.headers,
         'Content-Type': 'application/json',
         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
     };
+
+    try {
+        const response = await fetch(url, options);
+
+        if (response.status === 401 || response.status === 403) {
+            console.error("Authorization failed. Redirecting to login...");
+            window.location.href = '/users/login/';
+            return null;
+        }
+
+        return response;
+    } catch (err) {
+        console.error("Network Error:", err);
+        showToast('error', 'Network error. Please try again.');
+        return null;
+    }
 }
 
+// ─────────── TOAST NOTIFICATION ───────────
 let toastTimeout;
 function showToast(type, msg) {
     const toast = document.getElementById('toast-notification');
@@ -352,11 +361,13 @@ function getProfilePayload() {
 
 async function createProfile() {
     const payload = getProfilePayload();
-    const res = await fetch('/jobseeker/profile/', {
+    const res = await authFetch('/jobseeker/profile/', {
         method: 'POST',
-        headers: getHeaders(),
         body: JSON.stringify(payload)
     });
+    
+    if (!res) return; // authFetch handled the error
+    
     const data = await res.json();
     if (data.success) {
         showToast('success', "Profile Created Successfully");
@@ -369,11 +380,13 @@ async function createProfile() {
 
 async function updateProfile() {
     const payload = getProfilePayload();
-    const res = await fetch('/jobseeker/profile/', {
+    const res = await authFetch('/jobseeker/profile/', {
         method: 'PATCH',
-        headers: getHeaders(),
         body: JSON.stringify(payload)
     });
+    
+    if (!res) return; 
+
     const data = await res.json();
     if (data.success) {
         showToast('success', "Profile Updated Successfully");
@@ -388,12 +401,13 @@ async function deleteItem(btn, type) {
     const id = el.querySelector('input[type=hidden]').value;
 
     if (id) {
-        await fetch(`/jobseeker/profile/${type}/${id}/`, {
-            method: 'DELETE',
-            headers: getHeaders()
+        const res = await authFetch(`/jobseeker/profile/${type}/${id}/`, {
+            method: 'DELETE'
         });
+        if (!res) return;
     }
     el.remove();
+    showToast('success', 'Item Deleted');
 }
 
 function toggleCurrent(checkbox) {
@@ -427,18 +441,24 @@ function addSkill(data = {}) {
 async function saveSkill(btn) {
     const el = btn.closest('.dynamic-block');
     const id = el.children[0].value;
-    const res = await fetch(
+    const res = await authFetch(
         id ? `/jobseeker/profile/skill/${id}/` : '/jobseeker/profile/skill/',
         {
             method: id ? 'PATCH' : 'POST',
-            headers: getHeaders(),
             body: JSON.stringify({ skill_name: el.children[1].value })
         }
     );
+    
+    if (!res) return;
+    
     const d = await res.json();
     if (!id && d.success) {
         el.children[0].value = d.data.skill_id;
         showToast('success', 'Skill saved');
+    } else if (d.success) {
+        showToast('success', 'Skill updated');
+    } else {
+        showToast('error', JSON.stringify(d.errors || 'Failed to save skill'));
     }
 }
 
@@ -458,18 +478,24 @@ function addLocation(data = {}) {
 async function saveLocation(btn) {
     const el = btn.closest('.dynamic-block');
     const id = el.children[0].value;
-    const res = await fetch(
+    const res = await authFetch(
         id ? `/jobseeker/profile/location/${id}/` : '/jobseeker/profile/location/',
         {
             method: id ? 'PATCH' : 'POST',
-            headers: getHeaders(),
             body: JSON.stringify({ location_name: el.children[1].value })
         }
     );
+    
+    if (!res) return;
+    
     const d = await res.json();
     if (!id && d.success) {
         el.children[0].value = d.data.location_id;
         showToast('success', 'Location saved');
+    } else if (d.success) {
+        showToast('success', 'Location updated');
+    } else {
+        showToast('error', JSON.stringify(d.errors || 'Failed to save location'));
     }
 }
 
@@ -532,11 +558,12 @@ async function saveExperience(btn) {
     const url = id ? `/jobseeker/profile/experience/${id}/` : `/jobseeker/profile/experience/`;
     const method = id ? 'PATCH' : 'POST';
 
-    const res = await fetch(url, {
+    const res = await authFetch(url, {
         method: method,
-        headers: getHeaders(),
         body: JSON.stringify(payload)
     });
+    
+    if (!res) return;
 
     const d = await res.json();
     if (d.success) {
@@ -600,26 +627,23 @@ async function saveEducation(btn) {
     const url = id ? `/jobseeker/profile/education/${id}/` : `/jobseeker/profile/education/`;
     const method = id ? 'PATCH' : 'POST';
 
-    try {
-        const res = await fetch(url, {
-            method: method,
-            headers: getHeaders(),
-            body: JSON.stringify(payload)
-        });
-        const d = await res.json();
-        
-        if (d.success) {
-            showToast('success', id ? "Updated Successfully" : "Created Successfully");
-            if (!id) {
-                el.querySelector('[name="education_id"]').value = d.data.education_id;
-                btn.innerText = "Update";
-            }
-        } else {
-            showToast('error', JSON.stringify(d.errors || d));
+    const res = await authFetch(url, {
+        method: method,
+        body: JSON.stringify(payload)
+    });
+    
+    if (!res) return;
+    
+    const d = await res.json();
+    
+    if (d.success) {
+        showToast('success', id ? "Updated Successfully" : "Created Successfully");
+        if (!id) {
+            el.querySelector('[name="education_id"]').value = d.data.education_id;
+            btn.innerText = "Update";
         }
-    } catch (err) {
-        console.error(err);
-        showToast('error', "Something went wrong");
+    } else {
+        showToast('error', JSON.stringify(d.errors || d));
     }
 }
 
@@ -627,8 +651,8 @@ async function saveEducation(btn) {
 async function loadProfileData() {
     try {
         // PROFILE
-        const profileRes = await fetch('/jobseeker/profile/', { headers: getHeaders() });
-        if (profileRes.ok) {
+        const profileRes = await authFetch('/jobseeker/profile/');
+        if (profileRes && profileRes.ok) {
             const profileData = await profileRes.json();
             
             if (profileData.success && profileData.data && Object.keys(profileData.data).length > 0) {
@@ -650,29 +674,29 @@ async function loadProfileData() {
         }
 
         // SKILLS
-        const skillRes = await fetch('/jobseeker/profile/skill/', { headers: getHeaders() });
-        if (skillRes.ok) {
+        const skillRes = await authFetch('/jobseeker/profile/skill/');
+        if (skillRes && skillRes.ok) {
             const skills = await skillRes.json();
             if (skills.data) skills.data.forEach(addSkill);
         }
 
         // LOCATIONS
-        const locRes = await fetch('/jobseeker/profile/location/', { headers: getHeaders() });
-        if (locRes.ok) {
+        const locRes = await authFetch('/jobseeker/profile/location/');
+        if (locRes && locRes.ok) {
             const locations = await locRes.json();
             if (locations.data) locations.data.forEach(addLocation);
         }
 
         // EDUCATION
-        const eduRes = await fetch('/jobseeker/profile/education/', { headers: getHeaders() });
-        if (eduRes.ok) {
+        const eduRes = await authFetch('/jobseeker/profile/education/');
+        if (eduRes && eduRes.ok) {
             const educations = await eduRes.json();
             if (educations.data) educations.data.forEach(addEducation);
         }
 
         // EXPERIENCE
-        const expRes = await fetch('/jobseeker/profile/experience/', { headers: getHeaders() });
-        if (expRes.ok) {
+        const expRes = await authFetch('/jobseeker/profile/experience/');
+        if (expRes && expRes.ok) {
             const experiences = await expRes.json();
             if (experiences.data) experiences.data.forEach(addExperience);
         }

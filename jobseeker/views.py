@@ -5,7 +5,7 @@ from django.db import DatabaseError
 from django.db import IntegrityError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from Users.permissions import HasResourcePermission
+# from Users.permissions import HasResourcePermission
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 
@@ -37,7 +37,7 @@ def jobseeker_dashboard_view(request):
 
 class JobSeekerProfileView(BaseAPIView):
     throttle_classes = [BurstRateThrottle]
-    permission_classes = [HasResourcePermission, IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     resource = "profile"
 
     def get(self, request):
@@ -127,7 +127,7 @@ class JobSeekerProfileView(BaseAPIView):
 
 class SkillView(BaseAPIView):
     throttle_classes = [BurstRateThrottle]
-    permission_classes = [HasResourcePermission, IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     resource = "skill"
 
     def get(self, request, skill_id=None):
@@ -231,7 +231,7 @@ class SkillView(BaseAPIView):
 
 class PreferredLocationView(BaseAPIView):
     throttle_classes = [BurstRateThrottle]
-    permission_classes = [HasResourcePermission, IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     resource = "location"
 
     def get(self, request, location_id=None):
@@ -345,7 +345,7 @@ class PreferredLocationView(BaseAPIView):
 
 class EducationView(BaseAPIView):
     throttle_classes = [BurstRateThrottle]
-    permission_classes = [HasResourcePermission, IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     resource = "education"
 
     def get(self, request, education_id=None):
@@ -524,7 +524,7 @@ class EducationView(BaseAPIView):
 
 class ExperienceView(BaseAPIView):
     throttle_classes = [BurstRateThrottle]
-    permission_classes = [HasResourcePermission, IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     resource = "experience"
     
 
