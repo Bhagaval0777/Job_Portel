@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from Job_Portel.notification.helpers import notify_user
 from Jobs.models import Job, Category
 from Jobs.serializers import JobCreateSerializer, JobListSerializer, JobUpdateSerializer, CategoryCreateSerializer, CategoryUpdateSerializer
 from Jobs.utils import CategoryPagination, CategoryService, CACHE_TIMEOUT
@@ -289,6 +290,17 @@ class JobListCreateAPIView(BaseAPIView):
                     logger.info(f"Creating job title='{validated_data.get('title')}'")
                     job = Job.objects.create(**validated_data)
 
+                notify_user(
+                    recipient=request.user,
+                    title="Job Posted",
+                    message=f"Job '{job.title}' posted successfully",
+                    notification_type="system",
+                    data={
+                        "job_id": str(job.job_id),
+                        "title_slug": job.title_slug
+                    }
+                )
+
                 logger.info(f"Job created successfully job_id={job.job_id}")
                 return Response(
                     {
@@ -419,6 +431,16 @@ class JobRetrieveUpdateDeleteAPIView(BaseAPIView):
                 with transaction.atomic():
                     serializer.save()
 
+                notify_user(
+                    recipient=request.user,
+                    title="Job Updated",
+                    message=f"Job '{job.title}' updated",
+                    notification_type="system",
+                    data={
+                        "job_id": str(job.job_id)
+                    }
+                )
+
                 logger.info(f"Job updated job_id={job.job_id}")
                 return Response(
                     {
@@ -457,6 +479,13 @@ class JobRetrieveUpdateDeleteAPIView(BaseAPIView):
 
             with transaction.atomic():
                 job.delete()
+
+            notify_user(
+                recipient=request.user,
+                title="Job Deleted",
+                message=f"Job '{job.title}' deleted",
+                notification_type="system"
+            )
 
             logger.info(f"Job deleted job_id={job.job_id}")
             return Response(

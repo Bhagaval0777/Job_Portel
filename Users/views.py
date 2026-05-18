@@ -18,6 +18,7 @@ from axes.handlers.proxy import AxesProxyHandler
 
 # Local/App Imports
 from Users.authentication import CustomJWTAuthentication
+from notification.helpers import notify_user
 from Users.models import Users  
 from Users.serializers import * 
 from .utils import *
@@ -129,6 +130,18 @@ class VerifyEmailOTP(APIView):
                 return JsonResponse(serializer.errors, status=400)
 
             serializer.save(is_verified=True)
+
+            user = Users.objects.get(
+                user_email=email
+            )
+
+            notify_user(
+                recipient=user,
+                title="Welcome to Job Portal",
+                message="Your account was created successfully",
+                notification_type="system",
+                send_email=True
+            )
 
             clear_verification_cache(email, token, ip)
             cache.delete(f"register:{email}")
