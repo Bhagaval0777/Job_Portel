@@ -7,11 +7,10 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.shortcuts import render
 from django.db import DatabaseError, IntegrityError
 # from django.contrib.auth.decorators import login_required
-from asgiref.sync import sync_to_async
 
 from .models import *
 from .serializers import *
-from .utils import custom_response
+from .utils import *
 
 logger = logging.getLogger("jobseeker")
 
@@ -27,39 +26,12 @@ class BaseAPIView(APIView):
         logger.error(f"Unhandled Exception: {str(exc)}")
         return custom_response(False, "Internal server error", errors=str(exc), status_code=500)
     
-
 # @login_required
 def jobseeker_dashboard_view(request):
     """
     Renders the frontend HTML dashboard for the Job Seeker.
     """
     return render(request, 'profile.html')
-
-# ==========================================
-# ASYNC SYNCHRONOUS WRAPPER HELPERS
-# ==========================================
-# DRF Serializers evaluate synchronously. We must wrap these in threadpools 
-# to prevent blocking the async event loop.
-
-@sync_to_async
-def validate_serializer(serializer):
-    """Safely runs serializer.is_valid() in a sync thread."""
-    return serializer.is_valid()
-
-@sync_to_async
-def save_serializer(serializer, **kwargs):
-    """Safely runs serializer.save() in a sync thread."""
-    return serializer.save(**kwargs)
-
-@sync_to_async
-def get_serialized_data(serializer_class, *args, **kwargs):
-    """Instantiates a serializer and returns its .data property safely."""
-    return serializer_class(*args, **kwargs).data
-
-@sync_to_async
-def get_serializer_data_from_instance(serializer):
-    """Safely extracts .data from an already instantiated serializer."""
-    return serializer.data
 
 class JobSeekerProfileView(BaseAPIView):
     throttle_classes = [BurstRateThrottle]

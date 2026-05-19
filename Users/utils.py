@@ -10,7 +10,7 @@ from django.core.mail import send_mail
 from celery import shared_task
 from asgiref.sync import sync_to_async
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('users')
 
 OTP_LIMIT = 10       # max OTP per window
 OTP_WINDOW = 300     # 5 minutes
