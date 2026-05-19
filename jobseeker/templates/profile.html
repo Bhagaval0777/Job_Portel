@@ -284,16 +284,29 @@ body {
 async function authFetch(url, options = {}) {
     options.credentials = 'same-origin'; // Crucial for sending session cookies
     options.headers = {
-        ...options.headers,
         'Content-Type': 'application/json',
-        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        ...options.headers
     };
+
+    // CHANGES: Injects the layout's active in-memory access token into the Bearer header block
+    if (window.accessToken) {
+        options.headers['Authorization'] = `Bearer ${window.accessToken}`;
+    }
 
     try {
         const response = await fetch(url, options);
 
+        // CHANGES: Synchronizes runtime storage memory if layout middleware issues updated tokens
+        const mutatedToken = response.headers.get('X-New-Access-Token');
+        if (mutatedToken) {
+            console.log("Updating local context with refreshed token from middleware.");
+            window.accessToken = mutatedToken;
+        }
+
         if (response.status === 401 || response.status === 403) {
             console.error("Authorization failed. Redirecting to login...");
+            window.accessToken = null; // Clear out sync state memory
             window.location.href = '/users/login/';
             return null;
         }
@@ -706,7 +719,18 @@ async function loadProfileData() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', loadProfileData);
+// CHANGES: Implemented a safe polling execution check. This guards against race conditions 
+// by waiting for layout init initialization workflows before running endpoints on DOMContentLoaded.
+document.addEventListener('DOMContentLoaded', () => {
+    const checkAuthAndLoad = () => {
+        if (window.accessToken !== undefined) {
+            loadProfileData();
+        } else {
+            setTimeout(checkAuthAndLoad, 50); // Checks again in 50ms if boot layout setup hasn't run yet
+        }
+    };
+    checkAuthAndLoad();
+});
 </script>
 
 {% endblock %}

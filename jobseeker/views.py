@@ -78,7 +78,7 @@ class JobSeekerProfileView(BaseAPIView):
                 logger.warning(f"[JobSeekerProfileView GET] Profile not found for user: {request.user}")
                 return custom_response(False, "Profile not found", status_code=404)
 
-            logger.debug(f"[JobSeekerProfileView GET] Profile found (ID: {profile.id}). Serializing data...")
+            logger.debug(f"[JobSeekerProfileView GET] Profile found (ID: {profile.jobseeker_profile_id}). Serializing data...")
             serializer = JobSeekerProfileSerializer(profile)
             data = await get_serializer_data_from_instance(serializer)
             
@@ -145,7 +145,7 @@ class JobSeekerProfileView(BaseAPIView):
 
             is_valid = await validate_serializer(serializer)
             if is_valid:
-                logger.debug(f"[JobSeekerProfileView PUT] Validation passed. Saving updates for profile ID: {profile.id}...")
+                logger.debug(f"[JobSeekerProfileView PUT] Validation passed. Saving updates for profile ID: {profile.jobseeker_profile_id}...")
                 await save_serializer(serializer)
                 data = await get_serializer_data_from_instance(serializer)
                 
@@ -177,7 +177,7 @@ class JobSeekerProfileView(BaseAPIView):
 
             is_valid = await validate_serializer(serializer)
             if is_valid:
-                logger.debug(f"[JobSeekerProfileView PATCH] Validation passed. Saving partial updates for profile ID: {profile.id}...")
+                logger.debug(f"[JobSeekerProfileView PATCH] Validation passed. Saving partial updates for profile ID: {profile.jobseeker_profile_id}...")
                 await save_serializer(serializer)
                 data = await get_serializer_data_from_instance(serializer)
                 
@@ -211,7 +211,7 @@ class SkillView(BaseAPIView):
                 return custom_response(False, "Profile not found", status_code=404)
 
             if skill_id:
-                logger.debug(f"[SkillView GET] Querying specific skill ID: {skill_id} for profile: {profile.id}")
+                logger.debug(f"[SkillView GET] Querying specific skill ID: {skill_id} for profile: {profile.jobseeker_profile_id}")
                 skill = await Skill.objects.filter(skill_id=skill_id, profile=profile).afirst()
 
                 if not skill:
@@ -224,7 +224,7 @@ class SkillView(BaseAPIView):
                 logger.info(f"[SkillView GET] Specific skill {skill_id} fetched successfully.")
                 return custom_response(True, "Skill fetched", data)
 
-            logger.debug(f"[SkillView GET] Querying all skills for profile: {profile.id}")
+            logger.debug(f"[SkillView GET] Querying all skills for profile: {profile.jobseeker_profile_id}")
             # Evaluate queryset safely via our sync_to_async wrapper
             data = await get_serialized_data(SkillSerializer, Skill.objects.filter(profile=profile), many=True)
 
@@ -330,7 +330,7 @@ class PreferredLocationView(BaseAPIView):
                 logger.info(f"[PreferredLocationView GET] Single location {location_id} fetched.")
                 return custom_response(True, "Location fetched", data)
 
-            logger.debug(f"[PreferredLocationView GET] Querying all locations for profile: {profile.id}")
+            logger.debug(f"[PreferredLocationView GET] Querying all locations for profile: {profile.jobseeker_profile_id}")
             data = await get_serialized_data(
                 PreferredLocationSerializer, 
                 PreferredLocation.objects.filter(profile=profile), 
@@ -443,7 +443,7 @@ class EducationView(BaseAPIView):
                 logger.info(f"[EducationView GET] Education {education_id} fetched successfully.")
                 return custom_response(True, "Education fetched", data)
 
-            logger.debug(f"[EducationView GET] Querying all education records for profile: {profile.id}")
+            logger.debug(f"[EducationView GET] Querying all education records for profile: {profile.jobseeker_profile_id}")
             data = await get_serialized_data(
                 EducationSerializer,
                 Education.objects.filter(profile=profile),
@@ -627,7 +627,7 @@ class ExperienceView(BaseAPIView):
                 logger.info(f"[ExperienceView GET] Experience {experience_id} fetched successfully.")
                 return custom_response(True, "Experience fetched", data)
 
-            logger.debug(f"[ExperienceView GET] Querying all experience records for profile: {profile.id}")
+            logger.debug(f"[ExperienceView GET] Querying all experience records for profile: {profile.jobseeker_profile_id}")
             data = await get_serialized_data(
                 ExperienceSerializer,
                 Experience.objects.filter(profile=profile),

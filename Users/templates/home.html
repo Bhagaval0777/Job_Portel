@@ -12,80 +12,26 @@
 </div>
 
 <script>
-    // 1. Helper to grab the CSRF token from cookies (Required for POST requests)
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    /**
-     * 2. JWT-Aware Fetch Function
-     * Automatically attaches the Bearer token from localStorage
-     */
-    async function authFetch(url, options = {}) {
-        const accessToken = localStorage.getItem('access_token');
-        
-        // If no access token is found locally, redirect to login immediately
-        if (!accessToken) {
-            window.location.href = '/users/login/';
-            return null;
-        }
-
-        // Prepare headers with Authorization and CSRF
-        options.headers = {
-            ...options.headers,
-            'Authorization': `Bearer ${accessToken}`, 
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json',
-        };
-
-        try {
-            const response = await fetch(url, options);
-
-            // Handle 401 (Unauthorized/Expired) or 403 (Forbidden)
-            if (response.status === 401 || response.status === 403) {
-                console.error("Session expired or invalid.");
-                localStorage.clear();
-                window.location.href = '/users/login/';
-                return null;
-            }
-
-            return response;
-        } catch (error) {
-            console.error("Network error:", error);
-            return null;
-        }
-    }
-
-    /**
-     * 3. Main function to load User Data and update UI
-     */
     async function loadUser() {
         const container = document.getElementById('content');
         
-        // Fetch data from your DRF endpoint (e.g., UserDetailsView)
-        const res = await authFetch('/users/details/');
+        // 1. CRITICAL: Pause execution here until base.html finishes its background silent refresh check
+        await window.authCheckPromise;
+        
+        // 2. Now run the request. If the token was recovered, it will be securely attached
+        const res = await window.authFetch('/users/details/');
         
         if (res && res.ok) {
             const data = await res.json();
+
             if (data.role === 'recruiter') {
                 window.location.href = '/dashboard/recruiter/';
-                return; // Stop execution here
+                return; 
             } else if (data.role === 'jobseeker') {
                 window.location.href = '/dashboard/jobseeker/';
-                return; // Stop execution here
+                return; 
             }
-            // Build the dynamic UI
+
             container.innerHTML = `
                 <div style="background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb;">
                     <p style="font-size: 1.2rem;">Welcome, <strong id="user-display"></strong>!</p>
@@ -100,39 +46,31 @@
                 </div>
             `;
 
-            // Securely inject text content to prevent XSS
             document.getElementById('user-display').textContent = data.user_email || 'User';
             document.getElementById('u-email').textContent = data.user_email;
             document.getElementById('u-id').textContent = data.user_id;
             document.getElementById('u-role').textContent = data.role || 'General User';
 
-            // Handle Logout Logic
             document.getElementById('logout-btn').onclick = async () => {
-                const refreshToken = localStorage.getItem('refresh_token');
-                
-                // Optional: Blacklist the refresh token on the server
-                if (refreshToken) {
-                    await authFetch('/users/logout/', { 
-                        method: 'POST',
-                        body: JSON.stringify({ refresh: refreshToken })
-                    });
+                try {
+                    await window.authFetch('/users/logout/', { method: 'POST' });
+                } catch (err) {
+                    console.error("Logout request error details:", err);
+                } finally {
+                    window.accessToken = null;
+                    window.location.href = '/users/login/';
                 }
-
-                // Clear all local storage and redirect
-                localStorage.clear();
-                window.location.href = '/users/login/';
             };
 
         } else {
-            // Failure case if authFetch returns null or non-ok response
+            // If the server returns a 401 even after the middleware tried using the cookie, the session is truly dead
             container.innerHTML = `
-                <p style="color: #991b1b;">Authentication failed. Redirecting to login...</p>
+                <p style="color: #991b1b;">Authentication failed or session expired. Redirecting to login...</p>
             `;
             setTimeout(() => { window.location.href = '/users/login/'; }, 1500);
         }
     }
 
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', loadUser);
+document.addEventListener('DOMContentLoaded', loadUser);
 </script>
 {% endblock %}

@@ -2,7 +2,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 class CustomJWTAuthentication(JWTAuthentication):
     def authenticate(self, request):
-        # Only look at the 'Authorization: Bearer <token>' header
+        # Resolves either the initial header or the overridden header injected by our middleware
         header = self.get_header(request)
         if header is None:
             return None
