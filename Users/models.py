@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
+from asgiref.sync import sync_to_async
 
 class UserManager(BaseUserManager):
     def create_user(self, user_email, password=None, **extra_fields):
@@ -20,6 +21,14 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('role', 'admin')
 
         return self.create_user(user_email, password, **extra_fields)
+
+    async def acreate_user(self, user_email, password=None, **extra_fields):
+        """Asynchronously creates and saves a standard user."""
+        return await sync_to_async(self.create_user)(user_email, password=password, **extra_fields)
+
+    async def acreate_superuser(self, user_email, password=None, **extra_fields):
+        """Asynchronously creates and saves a superuser."""
+        return await sync_to_async(self.create_superuser)(user_email, password=password, **extra_fields)
 
 class Users(AbstractBaseUser,PermissionsMixin):
     ROLE_CHOICES = (

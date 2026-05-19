@@ -1,11 +1,5 @@
-from notification.services import (
-    NotificationService
-)
-
-from notification.tasks import (
-    send_email_notification_task
-)
-
+from notification.services import NotificationService
+from notification.tasks import send_email_notification_task
 
 def notify_user(
     recipient,

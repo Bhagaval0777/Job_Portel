@@ -1,45 +1,53 @@
-"""
-apps/jobs/tasks.py
-
-Celery beat task that runs daily and automatically closes
-jobs whose deadline has passed.
-
-Setup in settings.py:
-    CELERY_BEAT_SCHEDULE = {
-        'expire-jobs-daily': {
-            'task': 'apps.jobs.tasks.expire_jobs',
-            'schedule': crontab(hour=0, minute=0),  # midnight every day
-        },
-    }
-"""
-from celery import shared_task
-from django.utils import timezone
 import logging
+from django.utils import timezone
+from celery import shared_task
+from celery.signals import worker_ready
+from Jobs.models import Job
 
-logger = logging.getLogger(__name__)
-
+logger = logging.getLogger("jobs")
 
 @shared_task
-def expire_jobs():
+def auto_expire_deadline_jobs():
     """
-    Find all open jobs where deadline < today and close them.
-    Uses bulk update for efficiency — one DB query regardless of how many jobs.
+    Periodic background task to find all OPEN jobs where the deadline has passed
+    and change their status to EXPIRED.
+    Runs synchronously as required by Celery workers using an efficient bulk update.
     """
-    from .models import Job
 
-    today = timezone.now().date()
+    try:
+        today = timezone.now().date()
+        logger.info(f"[Scheduled Expiry] Executing job cleanup task for date: {today}")
 
-    expired = Job.objects.filter(
-        status=Job.Status.OPEN,
-        deadline__lt=today,
-    )
+        # Query all open jobs where deadline is less than today
+        expired_jobs_queryset = Job.objects.filter(
+            status=Job.Status.OPEN,
+            deadline__lt=today,
+        )
 
-    count = expired.count()
+        # Get count for trace reporting
+        count = expired_jobs_queryset.count()
 
-    if count > 0:
-        expired.update(status=Job.Status.CLOSED)
-        logger.info(f'expire_jobs: closed {count} expired job(s).')
-    else:
-        logger.info('expire_jobs: no expired jobs found.')
+        if count > 0:
+            logger.info(f"[Scheduled Expiry] Found {count} open jobs past their deadline. Executing bulk update...")
+            expired_jobs_queryset.update(status=Job.Status.EXPIRED)
+            logger.info(f"[Scheduled Expiry] Success! Status set to EXPIRED for {count} job record(s).")
+        
+        else:
+            logger.info("[Scheduled Expiry] Check finished: No jobs found requiring status expiration today.")
 
-    return f'{count} jobs expired.'
+        return f"{count} jobs successfully transitioned to EXPIRED."
+
+    except Exception as e:
+        logger.exception(f"[Scheduled Expiry] Critical error encountered during database batch clean step: {str(e)}")
+        raise
+
+@worker_ready.connect
+def run_on_startup(sender, **kwargs):
+    """
+    This signal hook triggers automatically the exact microsecond 
+    the Celery worker restarts or comes live.
+    """
+    logger.info("[Celery Startup] Worker process is live! Triggering baseline job expiration sweep immediately...")
+    
+    # .delay() pushes the execution task context into the queue right now
+    auto_expire_deadline_jobs.delay()

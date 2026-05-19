@@ -17,6 +17,8 @@ from pathlib import Path
 from datetime import timedelta
 import environ # pip install django-environ
 
+from celery.schedules import crontab # For periodic task scheduling
+
 env = environ.Env() # Initialize environment variables .env file handler
 #-----------------------------------------------
 
@@ -41,19 +43,30 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # 1. ASGI Server (MUST BE AT THE VERY TOP)
+    'daphne',
+
+    # 2. Django Core Apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'daphne',   # ASGI server
     'django.contrib.staticfiles',
+
+    # 3. Third-Party Apps
+    'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
-    'corsheaders',
+    'adrf',
+    'channels',
     'axes',
-    'channels', # WebSocket support
-    'django_redis',# Caching
+    
+    # (Note: 'django_redis' usually doesn't need to be in INSTALLED_APPS at all, 
+    # as it's configured in the CACHES setting. But it's harmless if kept here).
+    'django_redis', 
+
+    # 4. Your Local/Custom Apps
     'Users',
     'jobseeker',
     'recruiter',
@@ -96,7 +109,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'JobPortel.wsgi.application'
+# WSGI_APPLICATION = 'JobPortel.wsgi.application'
 
 ASGI_APPLICATION = 'JobPortel.asgi.application' # ASGI application for WebSocket support
 
@@ -310,4 +323,10 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Kolkata'
 
+CELERY_BEAT_SCHEDULE = {                                   #FOR JOBS
+    'expire-jobs-at-midnight': {
+        'task': 'Jobs.tasks.auto_expire_deadline_jobs',  # Update to match your app structure
+        'schedule': crontab(hour=0, minute=0),          # Runs exactly at 00:00 every day
+    },
+}
 #---------------------------------------------------------------------------------------

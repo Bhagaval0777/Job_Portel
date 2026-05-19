@@ -1,3 +1,4 @@
+from django.forms import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from .models import (
     JobSeekerProfile, Skill, PreferredLocation,
@@ -57,7 +58,6 @@ class SkillSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Skill name is required")
 
-        # ✅ normalize
         value = value.strip()
 
         if not request or not request.user:
@@ -66,10 +66,15 @@ class SkillSerializer(serializers.ModelSerializer):
         profile = JobSeekerProfile.objects.filter(user=request.user).first()
 
         if profile:
-            if Skill.objects.filter(
+            queryset = Skill.objects.filter(
                 profile=profile,
                 skill_name__iexact=value
-            ).exists():
+            )
+            
+            if self.instance:
+                queryset = queryset.exclude(pk=self.instance.pk)
+                
+            if queryset.exists():
                 raise serializers.ValidationError("Skill already exists")
 
         return value
@@ -95,16 +100,20 @@ class PreferredLocationSerializer(serializers.ModelSerializer):
         profile = JobSeekerProfile.objects.filter(user=request.user).first()
 
         if profile:
-            if PreferredLocation.objects.filter(
+            queryset = PreferredLocation.objects.filter(
                 profile=profile,
                 location_name__iexact=value
-            ).exists():
+            )
+            
+            if self.instance:
+                queryset = queryset.exclude(pk=self.instance.pk)
+                
+            if queryset.exists():
                 raise serializers.ValidationError("Location already exists")
 
         return value
-
+    
 class EducationSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Education
         fields = '__all__'
@@ -112,34 +121,36 @@ class EducationSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         request = self.context.get('request')
-
         qualification = data.get("qualification")
-        start_year = data.get("start_year")
-        end_year = data.get("end_year")
-        is_current = data.get("is_current")
-
-        if end_year and not is_current:
-            if end_year < start_year:
-                raise serializers.ValidationError({
-                    "end_year": "End year cannot be before start year."
-                })
 
         if request and request.user:
             profile = JobSeekerProfile.objects.filter(user=request.user).first()
-
             if profile and qualification:
                 queryset = Education.objects.filter(
                     profile=profile,
                     qualification__iexact=qualification.strip()
                 )
-
                 if self.instance:
                     queryset = queryset.exclude(pk=self.instance.pk)
-
-                if  queryset.exists():
+                if queryset.exists():
                     raise serializers.ValidationError({
                         "qualification": "This qualification already exists for your profile."
                     })
+
+        temp_data = data.copy()
+        if self.instance:
+            temp_data['start_year'] = temp_data.get('start_year', self.instance.start_year)
+            temp_data['end_year'] = temp_data.get('end_year', self.instance.end_year)
+            temp_data['is_current'] = temp_data.get('is_current', self.instance.is_current)
+
+        temp_instance = Education(**temp_data)
+        try:
+            temp_instance.clean()
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+
+        if data.get("is_current"):
+            data["end_year"] = None
 
         return data
 
@@ -150,37 +161,37 @@ class ExperienceSerializer(serializers.ModelSerializer):
         read_only_fields = ['experience_id', 'profile'] 
 
     def validate(self, data):
-        start_date = data.get("start_date")
-        end_date = data.get("end_date")
-        is_current = data.get("is_current")
-
         request = self.context.get("request")
-
-        if end_date and start_date and end_date < start_date:
-            raise serializers.ValidationError({
-                "end_date": "End date cannot be before start date."
-            })
-
-        if is_current:
-            data["end_date"] = None
 
         if request and request.user:
             profile = JobSeekerProfile.objects.filter(user=request.user).first()
-
-            if profile:
+            if profile and "company_name" in data and "role" in data and "start_date" in data:
                 queryset = Experience.objects.filter(
                     profile=profile,
                     company_name__iexact=data.get("company_name"),
                     role__iexact=data.get("role"),
                     start_date=data.get("start_date"),
                 )
-
                 if self.instance:
                     queryset = queryset.exclude(pk=self.instance.pk)
-
                 if queryset.exists():
                     raise serializers.ValidationError(
                         "This experience already exists for this company, role, and start date."
                     )
+                
+        temp_data = data.copy()
+        if self.instance:
+            temp_data['start_date'] = temp_data.get('start_date', self.instance.start_date)
+            temp_data['end_date'] = temp_data.get('end_date', self.instance.end_date)
+            temp_data['is_current'] = temp_data.get('is_current', self.instance.is_current)
+
+        temp_instance = Experience(**temp_data) 
+        try:
+            temp_instance.clean() 
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+
+        if data.get("is_current"):
+            data["end_date"] = None
 
         return data

@@ -1,3 +1,4 @@
+from celery import uuid
 from django.db import models
 from django.utils.text import slugify
 from django.core.validators import MinValueValidator
@@ -78,7 +79,7 @@ class Job(TimeStampedModel):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL,null=True,related_name="jobs")
 
     title = models.CharField(max_length=200)
-    title_slug = models.SlugField(max_length=250, unique=True, blank=True)
+    title_slug = models.SlugField(max_length=250, blank=True)
     description = models.TextField()
     location = models.CharField(max_length=150, blank=True)
     work_type = models.CharField(max_length=20, choices=WorkType.choices, default=WorkType.FULL_TIME)
@@ -107,18 +108,21 @@ class Job(TimeStampedModel):
             models.Index(fields=["created_at"]),
         ]
 
-    def save(self, *args, **kwargs):
+        constraints = [
+            UniqueConstraint(fields=['title_slug'], name='unique_job_title_slug')
+        ]
 
+    def save(self, *args, **kwargs):
+        """
+        Generates clean slugs instantly in local execution memory 
+        without introducing blocking database loop lookups.
+        """
         if not self.title_slug:
             base_slug = slugify(self.title)
-            slug = base_slug
-            counter = 1
-
-            while Job.objects.filter(title_slug=slug).exclude(job_id=self.job_id).exists():
-                slug = f"{base_slug}-{counter}"
-                counter += 1
-
-            self.title_slug = slug
+            # ✅ HIGH CONCURRENCY FIXED: Appends an instant 6-character unique hex value 
+            # to prevent race condition duplicates without any blocking ORM calls.
+            unique_suffix = uuid.uuid4().hex[:6]
+            self.title_slug = f"{base_slug}-{unique_suffix}"
 
         super().save(*args, **kwargs)
 
@@ -127,8 +131,6 @@ class Job(TimeStampedModel):
 
     @property
     def salary_range(self):
-
         if self.salary_min and self.salary_max:
             return f"{self.salary_min} - {self.salary_max}"
-
         return "Not Disclosed"
