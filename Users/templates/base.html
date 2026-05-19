@@ -27,6 +27,9 @@
     </footer>
 
     <script>
+      // 1. IN-MEMORY TOKEN STORAGE (Immune to XSS, cleared on refresh/close)
+      window.accessToken = null;
+
       // Global CSRF Helper
       window.getCookie = function(name) {
           let cookieValue = null;
@@ -43,63 +46,62 @@
           return cookieValue;
       };
 
-      // Global Smart Fetch for the whole project
-window.authFetch = async function(url, options = {}) {
-    let access = localStorage.getItem('access_token');
-    let refresh = localStorage.getItem('refresh_token');
+      // 2. RE-DESIGNED GLOBAL SMART FETCH
+      // The Django middleware handles the heavy lifting. This wrapper simply applies 
+      // the in-memory token and captures token updates from response headers.
+      window.authFetch = async function(url, options = {}) {
+          options.headers = {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': window.getCookie('csrftoken'),
+              ...options.headers
+          };
 
-    // 1. Initial check: If no access token, don't even try
-    if (!access) {
-        window.location.href = '/users/login/';
-        return null;
-    }
+          // Append access token if we have it in memory
+          if (window.accessToken) {
+              options.headers['Authorization'] = `Bearer ${window.accessToken}`;
+          }
 
-    options.headers = {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': window.getCookie('csrftoken'),
-        ...options.headers,
-        'Authorization': `Bearer ${access}`
-    };
+          try {
+              let response = await fetch(url, options);
 
-    let response = await fetch(url, options);
+              // Capture the new token if the Django middleware executed a silent refresh
+              const mutatedToken = response.headers.get('X-New-Access-Token');
+              if (mutatedToken) {
+                  console.log("Middleware successfully refreshed token. Updating JS memory.");
+                  window.accessToken = mutatedToken;
+              }
 
-    // 2. Silent Refresh logic
-    if (response.status === 401 && refresh) {
-        // Prevent infinite loops by checking a custom flag
-        if (options._isRetry) {
-            localStorage.clear();
-            window.location.href = '/users/login/';
-            return null;
-        }
+              // Handle full session expirations (Both tokens dead)
+              if (response.status === 401) {
+                  console.warn("Session expired. Redirecting to login view.");
+                  window.accessToken = null;
+                  window.location.href = '/users/login/';
+                  return null;
+              }
 
-        const refreshRes = await fetch('/users/token/refresh/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh: refresh })
-        });
+              return response;
+          } catch (error) {
+              console.error("Critical error in secure routing handler:", error);
+              throw error;
+          }
+      };
 
-        if (refreshRes.ok) {
-            const data = await refreshRes.json();
-            localStorage.setItem('access_token', data.access);
-            
-            // CRITICAL: Update refresh token if the server rotates it
-            if (data.refresh) {
-                localStorage.setItem('refresh_token', data.refresh);
-            }
+      // 3. PERSISTENCE ENGINE (Handles Page Refreshes / F5)
+      // On page load, the app hits a generic protected path or user detail view. 
+      // If a valid HttpOnly refresh cookie exists, the middleware drops a brand new 
+      // access token right back into the response header context.
+      window.addEventListener('DOMContentLoaded', async () => {
+          // Do not attempt refresh execution if the browser is currently standing on the login page
+          if (window.location.pathname === '/users/login/') return;
 
-            // Retry the original request with the new token
-            options.headers['Authorization'] = `Bearer ${data.access}`;
-            options._isRetry = true; // Mark this as a retry
-            return await fetch(url, options);
-        } else {
-            // Refresh token is truly dead
-            localStorage.clear();
-            window.location.href = '/users/login/';
-            return null;
-        }
-    }
-    return response;
-};
+          console.log("Detecting application startup. Resolving active session headers...");
+          try {
+              // Target an arbitrary lightweight endpoint requiring user authentication
+              await window.authFetch('/users/details/');
+          } catch (err) {
+              console.log("Initial session boot validation halted.");
+          }
+      });
     </script>
   </body>
 </html>

@@ -1,6 +1,5 @@
 from django.urls import path
 from . import views
-from rest_framework_simplejwt.views import  TokenRefreshView
 
 urlpatterns = [
     # Home page for users app (e.g. /users/)
@@ -10,8 +9,7 @@ urlpatterns = [
     path('templates/', views.register_page, name='users_register'),
 
     # Login & Refresh
-    path('login/', views.LoginView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+   path('login/', views.LoginView.as_view(), name='login'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
 
      # 2. This is the API endpoint your JavaScript calls

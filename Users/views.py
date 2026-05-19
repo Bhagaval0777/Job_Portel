@@ -177,7 +177,6 @@ class LoginView(APIView):
         return render(request, 'login.html')
 
     def post(self, request, *args, **kwargs):
-        # 1. PRE-EMPTIVE CHECK: Is this user/IP already locked?
         if AxesProxyHandler.is_locked(request):
             logger.error(f"Access denied: Account is currently locked for IP:{get_client_ip(request)}- {request.data.get('email')}")
             return Response({
@@ -188,35 +187,46 @@ class LoginView(APIView):
             serializer = LoginSerializer(data=request.data, context={"request": request})
             
             if not serializer.is_valid():
-                # This attempt failed. Axes will record this failure.
                 logger.warning(f"Login failed: Invalid credentials for {request.data.get('email')}")
                 return Response(
                     {"detail": "Invalid email or password."}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Success!
             user = serializer.validated_data["user"]
             refresh = RefreshToken.for_user(user)
             
             logger.info(f"User logged in: {user.user_email} - IP: {get_client_ip(request)}")
-            return Response({
-                "refresh": str(refresh),
+            
+            # 1. Access token goes to JSON response body (for Frontend RAM storage)
+            response = Response({
                 "access": str(refresh.access_token),
             }, status=status.HTTP_200_OK)
+            
+            # 2. Refresh token goes into a secure HttpOnly cookie
+            response.set_cookie(
+                key='refresh_token',
+                value=str(refresh),
+                httponly=True,
+                secure=True,          # Explicitly set to True for HTTPS prod environments
+                samesite='Lax',       # Protection against basic CSRF vectors
+                max_age=7 * 24 * 60 * 60  # Matches simplejwt refresh token lifetime (e.g., 7 days)
+            )
+            return response
 
         except PermissionDenied:
-            # Catching the exact moment the 3rd failure happens
             return Response({
                 "detail": "Too many attempts. Your account is now locked for 15 minutes."
             }, status=status.HTTP_403_FORBIDDEN)
+
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         try:
-            refresh_token = request.data.get("refresh")
+            # Look for refresh token in HttpOnly cookies instead of the request body
+            refresh_token = request.COOKIES.get("refresh_token")
             if not refresh_token:
                 return Response({"detail": "Refresh token required"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -224,7 +234,11 @@ class LogoutView(APIView):
             token.blacklist()
             
             logger.info(f"User logged out: {request.user.user_email}")
-            return Response({"detail": "Logged out successfully"}, status=status.HTTP_200_OK)
+            
+            response = Response({"detail": "Logged out successfully"}, status=status.HTTP_200_OK)
+            # Clear the cookie from the browser on logout
+            response.delete_cookie('refresh_token')
+            return response
             
         except TokenError as e:
             logger.warning(f"Logout failed: Invalid token - {str(e)}")
@@ -232,8 +246,7 @@ class LogoutView(APIView):
         except Exception as e:
             logger.error(f"Logout error: {str(e)}")
             return Response({"detail": "Internal server error"}, status=500)
-
-from django.shortcuts import redirect    
+  
 class HomeTemplateView(APIView):
     permission_classes = [AllowAny] 
 
