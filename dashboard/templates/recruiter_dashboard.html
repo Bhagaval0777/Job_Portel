@@ -79,6 +79,7 @@
         transition: all 0.3s ease;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 0.5rem;
         text-decoration: none;
     }
@@ -276,6 +277,23 @@
     .progress-tips {
         font-size: 0.85rem;
         color: var(--neutral-600);
+        margin-bottom: 1.5rem; /* Added padding to clear space for the action container */
+    }
+
+    /* Profile Button Specific Layout Engine Elements */
+    .profile-card-action {
+        width: 100%;
+    }
+
+    .btn-edit-profile {
+        background-color: var(--primary-color);
+        color: #ffffff;
+        width: 100%;
+    }
+
+    .btn-edit-profile:hover {
+        background-color: var(--neutral-700);
+        transform: translateY(-2px);
     }
     
     /* Content Card */
@@ -503,7 +521,6 @@
 </style>
 
 <div class="dashboard-container">
-    <!-- Header Section -->
     <div class="dashboard-header">
         <div class="header-content">
             <h1>Recruiter Dashboard</h1>
@@ -513,13 +530,9 @@
             <a href="#" class="btn btn-primary">
                 <span>➕</span> Post New Job
             </a>
-            <button class="btn btn-secondary">
-                <span>⚙️</span> Settings
-            </button>
         </div>
     </div>
 
-    <!-- Profile Completion Card -->
     <div class="profile-card">
         <div class="profile-header">
             <div>
@@ -534,9 +547,14 @@
         <div class="progress-tips">
             <strong>💡 Pro Tip:</strong> Add a company logo, description, and culture to boost visibility and attract top talent.
         </div>
+        
+        <div class="profile-card-action">
+            <a href="#" class="btn btn-edit-profile">
+                <span>⚙️</span> Complete Your Profile
+            </a>
+        </div>
     </div>
 
-    <!-- Stats Grid -->
     <div class="stats-grid">
         <div class="stat-card jobs">
             <div class="stat-icon">📋</div>
@@ -572,7 +590,6 @@
         </div>
     </div>
 
-    <!-- Job Listings Table -->
     <div class="content-card">
         <div class="card-header">
             <h2>Active Job Listings</h2>
@@ -586,6 +603,7 @@
         <div class="card-body">
             <table class="table">
                 <thead>
+                
                     <tr>
                         <th>Job Role</th>
                         <th>Status</th>
@@ -617,7 +635,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Load dashboard data
 async function loadDashboardData() {
     try {
-        // Check if window.authFetch exists, fallback to regular fetch
         const fetchFn = window.authFetch || fetch;
         const response = await fetchFn('/dashboard/recruiter/data/', {
             headers: {
@@ -703,7 +720,7 @@ function populateJobTable(jobs) {
                     <button class="btn-action" title="View Applications" onclick="window.location.href='/dashboard/${job.id}/candidates/'">
                         👁️ View
                     </button>
-                    <button class="btn-action" title="Edit Job">
+                    <button class="btn-action" title="Edit Job" onclick="window.location.href='/jobs/${job.id}/'">
                         ✏️ Edit
                     </button>
                     <button class="btn-action" style="color: var(--danger-color); border-color: var(--danger-light);" title="Delete Job">
@@ -720,11 +737,8 @@ function initializeFilters() {
     const filterBtns = document.querySelectorAll('.filter-btn');
     filterBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            // Remove active class from all buttons
             filterBtns.forEach(b => b.classList.remove('active'));
-            // Add active class to clicked button
             this.classList.add('active');
-            // Apply filter
             applyFilter(this.dataset.filter);
         });
     });
