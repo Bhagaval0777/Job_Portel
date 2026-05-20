@@ -2,6 +2,7 @@ import logging
 from asgiref.sync import sync_to_async
 
 from django.core.cache import cache
+from django.shortcuts import render
 from django.db import transaction, DatabaseError, IntegrityError
 
 # ✅ IMPORT FROM ADRF FOR ASYNC VIEW COMPATIBILITY
@@ -43,6 +44,13 @@ class BaseAPIView(APIView):
             },
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+def job_creating_frontend(request):
+    """
+    Renders the frontend HTML dashboard for the Job Seeker.
+    """
+    return render(request, 'jobs.html')
+
 
 class CategorySearchAPIView(BaseAPIView):
     pagination_class = CategoryPagination

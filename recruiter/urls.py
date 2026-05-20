@@ -7,10 +7,7 @@ app_name = 'profiles'
 urlpatterns = [
     # --- Company URLs ---
     # Matches: /companies/
-    path('companies/', CompanyViewSet.as_view({
-        'get': 'list', 
-        'post': 'create'
-    }), name='company-list'),
+    path('companies/', CompanyViewSet.as_view({'get': 'list', 'post': 'create'}), name='company-list'),
     
     # Matches: /companies/<id>/
     path('companies/<int:pk>/', CompanyViewSet.as_view({

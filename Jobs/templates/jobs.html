@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Job Dashboard</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f4f6f9;
+    }
+
+    .container {
+        display: flex;
+        height: 100vh;
+    }
+
+    /* LEFT SIDEBAR */
+    .sidebar {
+        width: 30%;
+        background: #1e293b;
+        color: white;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .sidebar h2 {
+        margin-top: 20px;
+        border-bottom: 1px solid #444;
+        padding-bottom: 5px;
+    }
+
+    /* RIGHT CONTENT */
+    .main {
+        width: 70%;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    input, select, textarea, button {
+        width: 100%;
+        padding: 8px;
+        margin: 8px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #1d4ed8;
+    }
+
+    .job-card {
+        background: white;
+        color: black;
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 5px;
+    }
+
+    .job-card button {
+        width: auto;
+        margin-right: 5px;
+        padding: 5px 10px;
+    }
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- LEFT SIDE -->
+    <div class="sidebar">
+
+        <!-- CREATE CATEGORY -->
+        <h2>Create Category</h2>
+        <input type="text" id="categoryName" placeholder="Category Name">
+        <button onclick="createCategory()">Create</button>
+
+        <!-- JOB LIST -->
+        <h2>My Jobs</h2>
+        <button onclick="loadJobs()">Refresh Jobs</button>
+
+        <div id="jobList"></div>
+
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="main">
+
+        <h1>Create Job</h1>
+
+        <input type="text" id="title" placeholder="Job Title">
+        <textarea id="description" placeholder="Description"></textarea>
+        <input type="text" id="location" placeholder="Location">
+
+        <select id="jobType">
+            <option value="FULL_TIME">Full Time</option>
+            <option value="PART_TIME">Part Time</option>
+            <option value="INTERNSHIP">Internship</option>
+            <option value="CONTRACT">Contract</option>
+        </select>
+
+        <input type="number" id="experience" placeholder="Years of Experience">
+        <input type="number" id="salaryMin" placeholder="Min Salary">
+        <input type="number" id="salaryMax" placeholder="Max Salary">
+
+        <input type="text" id="skills" placeholder="Skills (comma separated)">
+        <input type="text" id="tags" placeholder="Tags (comma separated)">
+        <input type="number" id="categoryId" placeholder="Category ID">
+
+        <button onclick="createJob()">Create Job</button>
+
+    </div>
+
+</div>
+
+<script>
+const BASE_URL = "http://127.0.0.1:8000";
+const TOKEN = "YOUR_ACCESS_TOKEN"; // 🔴 replace this
+
+// CREATE CATEGORY
+async function createCategory() {
+    const name = document.getElementById("categoryName").value;
+
+    const res = await fetch(`${BASE_URL}/jobs/categories/create/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${TOKEN}`
+        },
+        body: JSON.stringify({ name })
+    });
+
+    const data = await res.json();
+    alert(data.message || JSON.stringify(data));
+}
+
+// LOAD JOBS
+async function loadJobs() {
+    const res = await fetch(`${BASE_URL}/jobs/create/`, {
+        headers: {
+            "Authorization": `Bearer ${TOKEN}`
+        }
+    });
+
+    const data = await res.json();
+    const container = document.getElementById("jobList");
+    container.innerHTML = "";
+
+    data.data.forEach(job => {
+        const div = document.createElement("div");
+        div.className = "job-card";
+
+        div.innerHTML = `
+            <b>${job.title}</b><br>
+            Status: ${job.status}<br>
+            <small>${job.title_slug}</small><br>
+
+            <button onclick="updateJob('${job.title_slug}')">Open</button>
+            <button onclick="deleteJob('${job.title_slug}')">Delete</button>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+// CREATE JOB
+async function createJob() {
+    const payload = {
+        title: document.getElementById("title").value,
+        description: document.getElementById("description").value,
+        location: document.getElementById("location").value,
+        job_type: document.getElementById("jobType").value,
+        years_of_experience: parseInt(document.getElementById("experience").value),
+        salary_min: document.getElementById("salaryMin").value,
+        salary_max: document.getElementById("salaryMax").value,
+        skills_required: document.getElementById("skills").value.split(","),
+        tags: document.getElementById("tags").value.split(","),
+        category: document.getElementById("categoryId").value
+    };
+
+    const res = await fetch(`${BASE_URL}/jobs/create/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${TOKEN}`
+        },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    alert(data.message || "Created");
+}
+
+// UPDATE JOB
+async function updateJob(slug) {
+    const res = await fetch(`${BASE_URL}/jobs/update/?title_slug=${slug}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${TOKEN}`
+        },
+        body: JSON.stringify({ status: "OPEN" })
+    });
+
+    const data = await res.json();
+    alert(data.message);
+}
+
+// DELETE JOB
+async function deleteJob(slug) {
+    const res = await fetch(`${BASE_URL}/jobs/update/?title_slug=${slug}`, {
+        method: "DELETE",
+        headers: {
+            "Authorization": `Bearer ${TOKEN}`
+        }
+    });
+
+    const data = await res.json();
+    alert(data.message);
+}
+</script>
+
+</body>
+</html>
