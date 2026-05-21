@@ -34,7 +34,7 @@ def notification_post_save_handler(sender, instance, created, **kwargs):
     try:
         channel_layer = get_channel_layer()
         # Define isolated unique channel room identifier targeting the user's stream
-        user_group_name = f"user_notifications_{instance.recipient.id}"
+        user_group_name = f"user_notifications_{instance.recipient.user_id}"
 
         payload = {
             "type": "send_notification",

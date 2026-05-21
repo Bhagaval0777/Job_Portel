@@ -121,7 +121,7 @@ class Job(TimeStampedModel):
             base_slug = slugify(self.title)
             # ✅ HIGH CONCURRENCY FIXED: Appends an instant 6-character unique hex value 
             # to prevent race condition duplicates without any blocking ORM calls.
-            unique_suffix = uuid.uuid4().hex[:6]
+            unique_suffix = uuid()[:6]
             self.title_slug = f"{base_slug}-{unique_suffix}"
 
         super().save(*args, **kwargs)

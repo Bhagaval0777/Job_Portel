@@ -14,7 +14,7 @@ from channels.auth import AuthMiddlewareStack
 
 from notification.routing import websocket_urlpatterns
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'JobPortal.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'JobPortel.settings')
 
 application = ProtocolTypeRouter({
 
