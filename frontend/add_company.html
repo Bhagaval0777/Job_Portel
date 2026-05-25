@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Company — Company Manager</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page-wrapper">
+
+    <!-- ── Navbar ── -->
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-inner">
+          <a href="index.html" class="nav-brand">
+            <div class="brand-icon">CM</div>
+            CompanyManager
+          </a>
+          <ul class="nav-links">
+            <li><a href="index.html">Companies</a></li>
+            <li><a href="add-company.html" class="active">Add Company</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ── Main ── -->
+    <main class="main-content">
+      <div class="container">
+
+        <a href="index.html" class="back-link">
+          <span class="back-arrow">←</span> Back to Companies
+        </a>
+
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="page-header-inner">
+            <div>
+              <h1 class="page-title">Add Company</h1>
+              <p class="page-subtitle">Register a new company in the system</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alert area -->
+        <div id="alert-area"></div>
+
+        <!-- Form Card -->
+        <div class="card form-wrapper">
+          <div class="card-header">
+            <span class="card-title">Company Details</span>
+            <span class="tag">POST /api/companies/</span>
+          </div>
+          <div class="card-body">
+            <form id="add-company-form" novalidate>
+
+              <!-- Section: Basic Info -->
+              <div class="form-section">
+                <div class="form-section-title">Basic Information</div>
+                <div class="form-grid">
+
+                  <div class="form-group">
+                    <label for="companyName">Company Name <span class="required">*</span></label>
+                    <input
+                      type="text"
+                      id="companyName"
+                      name="companyName"
+                      class="form-control"
+                      placeholder="e.g. Acme Corporation"
+                      autocomplete="organization"
+                      maxlength="200"
+                    />
+                    <span class="field-error" id="companyName-error"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="website">Website</label>
+                    <input
+                      type="url"
+                      id="website"
+                      name="website"
+                      class="form-control"
+                      placeholder="https://example.com"
+                      autocomplete="url"
+                    />
+                    <span class="field-error" id="website-error"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="industry">Industry <span class="required">*</span></label>
+                    <select id="industry" name="industry" class="form-control">
+                      <option value="">Select industry…</option>
+                      <option>Technology</option>
+                      <option>Finance</option>
+                      <option>Healthcare</option>
+                      <option>Manufacturing</option>
+                      <option>Retail & E-Commerce</option>
+                      <option>Education</option>
+                      <option>Media & Entertainment</option>
+                      <option>Real Estate</option>
+                      <option>Transportation & Logistics</option>
+                      <option>Energy</option>
+                      <option>Agriculture</option>
+                      <option>Consulting</option>
+                      <option>Hospitality & Tourism</option>
+                      <option>Other</option>
+                    </select>
+                    <span class="field-error" id="industry-error"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="location">Location <span class="required">*</span></label>
+                    <input
+                      type="text"
+                      id="location"
+                      name="location"
+                      class="form-control"
+                      placeholder="e.g. Hyderabad, India"
+                      autocomplete="address-level2"
+                      maxlength="200"
+                    />
+                    <span class="field-error" id="location-error"></span>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Section: Details -->
+              <div class="form-section">
+                <div class="form-section-title">Additional Details</div>
+                <div class="form-grid">
+
+                  <div class="form-group full-width">
+                    <label for="address">Address</label>
+                    <input
+                      type="text"
+                      id="address"
+                      name="address"
+                      class="form-control"
+                      placeholder="Street, City, State, ZIP"
+                      autocomplete="street-address"
+                      maxlength="300"
+                    />
+                    <span class="field-error" id="address-error"></span>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label for="description">Description</label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      class="form-control"
+                      placeholder="Brief description of the company, what it does, its mission…"
+                      rows="4"
+                    ></textarea>
+                    <span class="field-error" id="description-error"></span>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Form Actions -->
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+                  ＋ Create Company
+                </button>
+                <button type="button" class="btn btn-secondary" id="reset-btn">
+                  Clear Form
+                </button>
+                <a href="index.html" class="btn btn-ghost">Cancel</a>
+              </div>
+
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-inner">
+          <span class="footer-text">Company Manager</span>
+          <span class="footer-text">Django REST API</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    const form      = document.getElementById('add-company-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const resetBtn  = document.getElementById('reset-btn');
+    const alertArea = document.getElementById('alert-area');
+
+    /* ── Show alert banner ── */
+    function showAlert(message, type = 'error') {
+      const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+      alertArea.innerHTML = `
+        <div class="alert alert-${type}">
+          <span class="alert-icon">${icons[type]}</span>
+          <span>${message}</span>
+        </div>`;
+      alertArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function clearAlert() { alertArea.innerHTML = ''; }
+
+    /* ── Client-side validation ── */
+    function validateForm(data) {
+      let valid = true;
+      clearFieldErrors();
+
+      if (!data.companyName.trim()) {
+        showFieldError('companyName', 'Company name is required.');
+        valid = false;
+      } else if (data.companyName.trim().length < 2) {
+        showFieldError('companyName', 'Must be at least 2 characters.');
+        valid = false;
+      }
+
+      if (!data.industry) {
+        showFieldError('industry', 'Please select an industry.');
+        valid = false;
+      }
+
+      if (!data.location.trim()) {
+        showFieldError('location', 'Location is required.');
+        valid = false;
+      }
+
+      if (data.website && !/^https?:\/\/.+/.test(data.website)) {
+        showFieldError('website', 'Enter a valid URL starting with http:// or https://');
+        valid = false;
+      }
+
+      return valid;
+    }
+
+    /* ── Form submit ── */
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearAlert();
+
+      const payload = {
+        companyName:  form.companyName.value.trim(),
+        website:      form.website.value.trim(),
+        industry:     form.industry.value,
+        location:     form.location.value.trim(),
+        address:      form.address.value.trim(),
+        description:  form.description.value.trim(),
+      };
+
+      if (!validateForm(payload)) {
+        showAlert('Please fix the errors highlighted below.', 'error');
+        return;
+      }
+
+      setBtnLoading(submitBtn, true, 'Creating…');
+
+      try {
+        const created = await createCompany(payload);
+        showAlert(
+          `Company <strong>${esc(created.companyName)}</strong> created successfully! ID: #${created.companyId ?? created.id}`,
+          'success'
+        );
+        showToast('Company created!', 'success');
+
+        // Reset form after success
+        form.reset();
+        clearFieldErrors();
+
+        // Redirect after brief delay
+        setTimeout(() => {
+          window.location.href = `company-detail.html?id=${created.companyId ?? created.id}`;
+        }, 1800);
+
+      } catch (err) {
+        console.error('Create failed:', err);
+        if (err.data) {
+          applyServerErrors(err.data);
+          showAlert('Validation failed — check the fields below.', 'error');
+        } else {
+          showAlert(`Failed to create company: ${err.message}. Ensure the backend is running.`, 'error');
+        }
+      } finally {
+        setBtnLoading(submitBtn, false);
+        submitBtn.innerHTML = '＋ Create Company';
+      }
+    });
+
+    /* ── Reset button ── */
+    resetBtn.addEventListener('click', () => {
+      form.reset();
+      clearFieldErrors();
+      clearAlert();
+    });
+  </script>
+</body>
+</html>

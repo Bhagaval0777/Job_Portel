@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Companies — Company Manager</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page-wrapper">
+
+    <!-- ── Navbar ── -->
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-inner">
+          <a href="index.html" class="nav-brand">
+            <div class="brand-icon">CM</div>
+            CompanyManager
+          </a>
+          <ul class="nav-links">
+            <li><a href="index.html" class="active">Companies</a></li>
+            <li><a href="add-company.html">Add Company</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ── Main ── -->
+    <main class="main-content">
+      <div class="container">
+
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="page-header-inner">
+            <div>
+              <h1 class="page-title">Companies</h1>
+              <p class="page-subtitle">Manage your company registry</p>
+            </div>
+            <div class="page-header-actions">
+              <button class="btn btn-secondary" id="refresh-btn" title="Refresh data">
+                ⟳ Refresh
+              </button>
+              <a href="add-company.html" class="btn btn-primary">
+                + Add Company
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="stats-bar" style="display:none">
+          <div class="stat-card">
+            <div class="stat-label">Total</div>
+            <div class="stat-value accent" id="stat-total">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Approved</div>
+            <div class="stat-value green" id="stat-approved">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pending</div>
+            <div class="stat-value" id="stat-pending">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Rejected</div>
+            <div class="stat-value red" id="stat-rejected">0</div>
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <div class="search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input
+              type="search"
+              id="search-input"
+              class="search-input"
+              placeholder="Search by name, industry, or location…"
+              autocomplete="off"
+            />
+          </div>
+          <select id="approval-filter" class="filter-select">
+            <option value="">All statuses</option>
+            <option value="approved">Approved</option>
+            <option value="pending">Pending</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <span class="results-count" id="results-count"></span>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrapper">
+          <table class="data-table" id="companies-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Company Name</th>
+                <th>Industry</th>
+                <th>Location</th>
+                <th>Approval</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="companies-tbody">
+              <!-- Rows injected by JS -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-inner">
+          <span class="footer-text">Company Manager</span>
+          <span class="footer-text">Django REST API</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal">
+      <div class="modal-icon">🗑️</div>
+      <div class="modal-title">Delete Company?</div>
+      <div class="modal-body">
+        You are about to permanently delete
+        <strong class="company-name-confirm"></strong>.
+        This action cannot be undone.
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modal-cancel">Cancel</button>
+        <button class="btn btn-danger" id="modal-confirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    /* ── State ── */
+    let allCompanies = [];
+
+    /* ── DOM refs ── */
+    const tbody        = document.getElementById('companies-tbody');
+    const searchInput  = document.getElementById('search-input');
+    const filterSelect = document.getElementById('approval-filter');
+    const countEl      = document.getElementById('results-count');
+    const statsBar     = document.getElementById('stats-bar');
+    const refreshBtn   = document.getElementById('refresh-btn');
+
+    /* ── Init ── */
+    document.addEventListener('DOMContentLoaded', loadCompanies);
+
+    refreshBtn.addEventListener('click', loadCompanies);
+    searchInput.addEventListener('input', renderTable);
+    filterSelect.addEventListener('change', renderTable);
+
+    /* ── Load all companies from API ── */
+    async function loadCompanies() {
+      showLoading(tbody);
+      refreshBtn.disabled = true;
+      statsBar.style.display = 'none';
+
+      try {
+        allCompanies = await fetchAllCompanies();
+        updateStats(allCompanies);
+        statsBar.style.display = 'grid';
+        renderTable();
+      } catch (err) {
+        console.error('Failed to load companies:', err);
+        showErrorState(tbody, 'Could not connect to backend');
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    }
+
+    /* ── Compute & display stats ── */
+    function updateStats(companies) {
+      document.getElementById('stat-total').textContent    = companies.length;
+      document.getElementById('stat-approved').textContent = companies.filter(c => isApproved(c)).length;
+      document.getElementById('stat-rejected').textContent = companies.filter(c => isRejected(c)).length;
+      document.getElementById('stat-pending').textContent  = companies.filter(c => isPending(c)).length;
+    }
+
+    function isApproved(c) {
+      const v = String(c.approval ?? '').toLowerCase();
+      return v === 'true' || v === 'approved';
+    }
+    function isRejected(c) {
+      const v = String(c.approval ?? '').toLowerCase();
+      return v === 'false' || v === 'rejected';
+    }
+    function isPending(c) { return !isApproved(c) && !isRejected(c); }
+
+    /* ── Render filtered / searched rows ── */
+    function renderTable() {
+      const query      = searchInput.value.trim().toLowerCase();
+      const statusFilter = filterSelect.value.toLowerCase();
+
+      const filtered = allCompanies.filter(c => {
+        // Text search
+        const matchText = !query ||
+          String(c.companyName  ?? '').toLowerCase().includes(query) ||
+          String(c.industry     ?? '').toLowerCase().includes(query) ||
+          String(c.location     ?? '').toLowerCase().includes(query);
+
+        // Status filter
+        let matchStatus = true;
+        if (statusFilter === 'approved') matchStatus = isApproved(c);
+        else if (statusFilter === 'rejected') matchStatus = isRejected(c);
+        else if (statusFilter === 'pending')  matchStatus = isPending(c);
+
+        return matchText && matchStatus;
+      });
+
+      countEl.textContent = filtered.length === allCompanies.length
+        ? `${allCompanies.length} companies`
+        : `${filtered.length} of ${allCompanies.length}`;
+
+      if (filtered.length === 0) {
+        showEmptyState(
+          tbody,
+          query || statusFilter ? 'No matches found' : 'No companies yet',
+          query || statusFilter ? 'Try a different search or filter.' : 'Add your first company to get started.'
+        );
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(c => `
+        <tr>
+          <td class="td-id" data-label="ID">#${esc(c.companyId ?? c.id)}</td>
+          <td class="td-name" data-label="Name">${esc(c.companyName)}</td>
+          <td data-label="Industry">${esc(c.industry || '—')}</td>
+          <td data-label="Location">${esc(c.location || '—')}</td>
+          <td data-label="Status">${approvalBadge(c.approval)}</td>
+          <td class="td-actions" data-label="Actions">
+            <a href="company-detail.html?id=${c.companyId ?? c.id}" class="btn btn-ghost btn-sm">View</a>
+            <a href="edit-company.html?id=${c.companyId ?? c.id}" class="btn btn-secondary btn-sm">Edit</a>
+            <button
+              class="btn btn-danger btn-sm"
+              onclick="handleDelete(${c.companyId ?? c.id}, '${esc(c.companyName)}')"
+            >Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    /* ── Delete flow ── */
+    function handleDelete(id, name) {
+      openDeleteModal(name, async () => {
+        try {
+          await deleteCompany(id);
+          allCompanies = allCompanies.filter(c => (c.companyId ?? c.id) != id);
+          updateStats(allCompanies);
+          renderTable();
+          showToast(`"${name}" deleted successfully`, 'success');
+        } catch (err) {
+          console.error('Delete failed:', err);
+          showToast('Failed to delete company. Please try again.', 'error');
+        }
+      });
+    }
+  </script>
+</body>
+</html>

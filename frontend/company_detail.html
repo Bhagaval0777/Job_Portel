@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Company Detail — Company Manager</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page-wrapper">
+
+    <!-- ── Navbar ── -->
+    <nav class="navbar">
+      <div class="container">
+        <div class="navbar-inner">
+          <a href="index.html" class="nav-brand">
+            <div class="brand-icon">CM</div>
+            CompanyManager
+          </a>
+          <ul class="nav-links">
+            <li><a href="index.html">Companies</a></li>
+            <li><a href="add-company.html">Add Company</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ── Main ── -->
+    <main class="main-content">
+      <div class="container">
+
+        <a href="index.html" class="back-link">
+          <span class="back-arrow">←</span> Back to Companies
+        </a>
+
+        <!-- Content injected by JS -->
+        <div id="detail-content">
+          <div style="padding: 60px 0;">
+            <div class="state-container">
+              <div class="spinner"></div>
+              <div class="state-title">Loading company…</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-inner">
+          <span class="footer-text">Company Manager</span>
+          <span class="footer-text">Django REST API</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Delete Modal -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal">
+      <div class="modal-icon">🗑️</div>
+      <div class="modal-title">Delete Company?</div>
+      <div class="modal-body">
+        You are about to permanently delete
+        <strong class="company-name-confirm"></strong>.
+        This action cannot be undone.
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modal-cancel">Cancel</button>
+        <button class="btn btn-danger" id="modal-confirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    const detailContent = document.getElementById('detail-content');
+
+    /* ── Init ── */
+    document.addEventListener('DOMContentLoaded', async () => {
+      const id = getParam('id');
+
+      if (!id) {
+        renderError('No company ID specified in the URL.');
+        return;
+      }
+
+      try {
+        const company = await fetchCompanyById(id);
+        renderDetail(company);
+      } catch (err) {
+        console.error('Failed to fetch company:', err);
+        if (err.message.includes('404')) {
+          renderError(`Company with ID #${id} was not found.`);
+        } else {
+          renderError(`Failed to load company: ${err.message}`);
+        }
+      }
+    });
+
+    /* ── Render full detail view ── */
+    function renderDetail(c) {
+      const id = c.companyId ?? c.id;
+      document.title = `${c.companyName} — Company Manager`;
+
+      detailContent.innerHTML = `
+        <!-- Hero -->
+        <div class="company-hero">
+          <div class="company-avatar">${initials(c.companyName)}</div>
+          <div class="company-meta">
+            <h1>${esc(c.companyName)}</h1>
+            <div style="color:var(--text-2);font-size:0.9rem;">${esc(c.description || 'No description provided.')}</div>
+            <div class="company-meta-tags">
+              ${approvalBadge(c.approval)}
+              ${c.industry ? `<span class="tag">🏭 ${esc(c.industry)}</span>` : ''}
+              ${c.location  ? `<span class="tag">📍 ${esc(c.location)}</span>`  : ''}
+              ${c.website   ? `<a href="${esc(c.website)}" target="_blank" class="tag" style="color:var(--accent)">🌐 ${esc(c.website)}</a>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions bar -->
+        <div style="display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap;">
+          <a href="edit-company.html?id=${id}" class="btn btn-primary">✏️ Edit Company</a>
+          <button class="btn btn-danger" onclick="handleDelete(${id}, '${esc(c.companyName)}')">
+            🗑️ Delete Company
+          </button>
+        </div>
+
+        <!-- Info cards -->
+        <div class="card" style="margin-bottom:24px;">
+          <div class="card-header">
+            <span class="card-title">Company Information</span>
+            <span class="tag">ID: #${esc(id)}</span>
+          </div>
+          <div class="card-body">
+            <div class="detail-grid">
+              <div class="detail-item">
+                <div class="detail-label">Company ID</div>
+                <div class="detail-value" style="font-family:'DM Mono',monospace;">#${esc(id)}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Company Name</div>
+                <div class="detail-value">${esc(c.companyName)}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Industry</div>
+                <div class="detail-value">${esc(c.industry || '—')}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Location</div>
+                <div class="detail-value">${esc(c.location || '—')}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Website</div>
+                <div class="detail-value">
+                  ${c.website
+                    ? `<a href="${esc(c.website)}" target="_blank" rel="noopener">${esc(c.website)}</a>`
+                    : '—'}
+                </div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Approval Status</div>
+                <div class="detail-value">${approvalBadge(c.approval)}</div>
+              </div>
+              <div class="detail-item" style="grid-column:1/-1;">
+                <div class="detail-label">Address</div>
+                <div class="detail-value">${esc(c.address || '—')}</div>
+              </div>
+              <div class="detail-item" style="grid-column:1/-1;">
+                <div class="detail-label">Description</div>
+                <div class="detail-value" style="white-space:pre-line;">${esc(c.description || '—')}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timestamps -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Record Timestamps</span>
+          </div>
+          <div class="card-body">
+            <div class="detail-grid" style="grid-template-columns: 1fr 1fr;">
+              <div class="detail-item">
+                <div class="detail-label">Created At</div>
+                <div class="detail-value" style="font-family:'DM Mono',monospace;font-size:0.82rem;">
+                  ${formatDate(c.created_at)}
+                </div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Last Updated</div>
+                <div class="detail-value" style="font-family:'DM Mono',monospace;font-size:0.82rem;">
+                  ${formatDate(c.updated_at)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /* ── Render error ── */
+    function renderError(message) {
+      detailContent.innerHTML = `
+        <div style="padding: 60px 0;">
+          <div class="state-container">
+            <div class="state-icon">⚠️</div>
+            <div class="state-title">${message}</div>
+            <a href="index.html" class="btn btn-secondary" style="margin-top:8px;">← Back to list</a>
+          </div>
+        </div>`;
+    }
+
+    /* ── Delete flow ── */
+    function handleDelete(id, name) {
+      openDeleteModal(name, async () => {
+        try {
+          await deleteCompany(id);
+          showToast(`"${name}" deleted successfully`, 'success');
+          setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+        } catch (err) {
+          console.error('Delete failed:', err);
+          showToast('Failed to delete company. Please try again.', 'error');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
