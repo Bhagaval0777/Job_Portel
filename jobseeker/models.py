@@ -3,7 +3,6 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 from .validators import phone_validator
 
-
 class JobSeekerProfile(models.Model):
     jobseeker_profile_id = models.AutoField(primary_key=True)
 
@@ -31,7 +30,6 @@ class JobSeekerProfile(models.Model):
     def __str__(self):
         return self.full_name
 
-
 class Skill(models.Model):
     skill_id = models.AutoField(primary_key=True)
 
@@ -50,7 +48,6 @@ class Skill(models.Model):
     def __str__(self):
         return self.skill_name
 
-
 class PreferredLocation(models.Model):
     location_id = models.AutoField(primary_key=True)
 
@@ -68,7 +65,6 @@ class PreferredLocation(models.Model):
 
     def __str__(self):
         return self.location_name
-
 
 class Education(models.Model):
     education_id = models.AutoField(primary_key=True)

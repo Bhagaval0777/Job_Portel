@@ -110,17 +110,44 @@ class RecruiterDashboardDataView(APIView):
         if not profile:
             return Response({"detail": "Profile missing"}, status=404)
 
-        # 1. Profile Completion Logic
-        fields_to_check = [user.user_email, profile.designation, profile.company, profile.phone_number]
-        filled_fields = [f for f in fields_to_check if f]
-        completion_rate = int((len(filled_fields) / len(fields_to_check)) * 100)
+        # 1. Recruiter Profile Completion Logic
+        recruiter_fields = [profile.full_name, profile.designation, profile.phone_number, profile.gender]
+        filled_recruiter_fields = [f for f in recruiter_fields if f]
+        recruiter_completion_rate = int((len(filled_recruiter_fields) / len(recruiter_fields)) * 100)
 
-        # 2. Optimized Job Query
-        my_jobs = Job.objects.filter(recruiter=profile).select_related('category').annotate(
+        # 2. Company Profile Completion & Admin Logic
+        company = getattr(profile, 'company', None)
+        company_completion_rate = 0
+        is_company_admin = False
+        company_id = None
+
+        if company:
+            # Safely get the company ID
+            company_id = getattr(company, 'id', getattr(company, 'company_id', None))
+            
+            # Check standard company fields (Adjust these to match your actual Company model)
+            company_fields = [
+                getattr(company, 'name', None), 
+                getattr(company, 'description', None), 
+                getattr(company, 'website', None), 
+                getattr(company, 'location', None),
+                getattr(company, 'industry', None),
+                getattr(company, 'address', None)
+            ]
+            filled_company_fields = [f for f in company_fields if f]
+            company_completion_rate = int((len(filled_company_fields) / len(company_fields)) * 100)
+            
+            # Determine if the user is an admin. Adjust this logic based on your models.
+            # Example 1: profile.role == 'admin'
+            # Example 2: company.owner == user
+            is_company_admin = getattr(profile, 'role', '') == 'admin' or getattr(company, 'owner', None) == user
+
+        # 3. Optimized Job Query
+        my_jobs = Job.objects.filter(recruiter=user).select_related('category').annotate(
             num_applicants=Count('applications')
         )
         
-        # 3. Stats Summary
+        # 4. Stats Summary
         all_apps = Application.objects.filter(job__in=my_jobs)
         status_summary = {
             "total_job_postings": my_jobs.count(),
@@ -129,24 +156,27 @@ class RecruiterDashboardDataView(APIView):
             "new_this_week": all_apps.filter(applied_at__gte=timezone.now() - datetime.timedelta(days=7)).count(),
         }
 
-        # 4. CRITICAL FIX: Convert QuerySet to a LIST of DICTIONARIES
-        # This converts the "Job" objects into simple JSON-friendly data
+        # 5. Convert QuerySet to a LIST of DICTIONARIES
         jobs_list = []
         for job in my_jobs:
             jobs_list.append({
-                "id": job.job_id,
+                "id": getattr(job, 'job_id', getattr(job, 'id', None)),
                 "title": job.title,
-                "category": job.category.name if job.category else "N/A",
+                "category": job.category.name if getattr(job, 'category', None) else "N/A",
                 "status": job.status,
-                "num_applicants": job.num_applicants,
-                "created_at": job.created_at.strftime("%b %d, %Y") # Date to String
+                "num_applicants": getattr(job, 'num_applicants', 0),
+                "created_at": job.created_at.strftime("%b %d, %Y") if job.created_at else "N/A"
             })
 
-        # 5. Return the Response
+        # 6. Return the Response with separated logic
         return Response({
-            "profile_completion": completion_rate,
+            "recruiter_profile_completion": recruiter_completion_rate,
+            "company_profile_completion": company_completion_rate,
+            "has_company": bool(company),
+            "company_id": company_id,
+            "is_company_admin": is_company_admin,
             "status_summary": status_summary,
-            "my_job_postings": jobs_list, # Send the list, NOT the QuerySet
+            "my_job_postings": jobs_list,
         })
 
 class RecruiterDashboardView(APIView):

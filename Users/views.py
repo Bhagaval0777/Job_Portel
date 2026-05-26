@@ -1,9 +1,8 @@
 import logging
 from tokenize import TokenError
-from asgiref.sync import sync_to_async
 
 from django.core.exceptions import PermissionDenied
-from django.core.cache import cache  # Ensure this is imported
+from django.core.cache import cache  
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -15,8 +14,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-# IMPORT APIView FROM ADRF
-from adrf.views import APIView
+from rest_framework.views import APIView
 
 from axes.handlers.proxy import AxesProxyHandler
 
@@ -36,15 +34,16 @@ def register_page(request):
 @method_decorator(ratelimit(key='ip', rate='5/m', block=True), name='post')
 class UserRegistration(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []  # No authentication required for registration
 
-    async def post(self, request):
+    def post(self, request):
         try:
             logger.info("[UserRegistration POST] API called")
 
-            ip = await sync_to_async(get_client_ip)(request)
+            ip = get_client_ip(request)
             logger.info(f"[UserRegistration POST] Client IP: {ip}")
 
-            allowed = await sync_to_async(check_ip_limit)("register_ip_limit", ip, 10, IP_EXPIRY)
+            allowed = check_ip_limit("register_ip_limit", ip, 10, IP_EXPIRY)
 
             if not allowed:
                 logger.warning(f"[UserRegistration POST] IP limit exceeded: {ip}")
@@ -64,7 +63,7 @@ class UserRegistration(APIView):
                 logger.warning(f"[UserRegistration POST] Invalid role '{role}' for email: {email}")
                 return JsonResponse({"error": "Invalid role"}, status=400)
 
-            user = await Users.objects.filter(user_email=email).afirst()
+            user = Users.objects.filter(user_email=email).first()
 
             if user:
                 logger.warning(f"[UserRegistration POST] User already exists: {email}")
@@ -78,25 +77,25 @@ class UserRegistration(APIView):
             raw_password = data.get("password")
             logger.info(f"[UserRegistration POST] Hashing password for email: {email}")
             
-            hashed_password = await sync_to_async(make_password)(raw_password)
+            hashed_password = make_password(raw_password)
 
             data["password"] = hashed_password
             data.pop("confirm_password", None)
 
             logger.info(f"[UserRegistration POST] Generating OTP for email: {email}")
-            otp = await sync_to_async(generate_otp)(email, request)
+            otp = generate_otp(email, request)
 
             if not otp:
                 logger.warning(f"[UserRegistration POST] OTP request limit exceeded for email: {email}")
                 return JsonResponse({"error": "Too many OTP requests. Try again later."}, status=429)
 
-            verify_token = await sync_to_async(create_verify_token)(email)
+            verify_token = create_verify_token(email)
             logger.info(f"[UserRegistration POST] Verification token created for email: {email}")
 
-            await cache.aset(f"register:{email}", data, timeout=SESSION_EXPIRY)
+            cache.set(f"register:{email}", data, timeout=SESSION_EXPIRY)
             logger.info(f"[UserRegistration POST] Registration data cached for email: {email}")
 
-            await sync_to_async(send_otp_email_task.delay)(email, otp)
+            send_otp_email_task.delay(email, otp)
             logger.info(f"[UserRegistration POST] OTP email task queued successfully for email: {email}")
 
             return JsonResponse({
@@ -112,8 +111,9 @@ class UserRegistration(APIView):
 @method_decorator(ratelimit(key='ip', rate='10/m', block=True), name='post')
 class VerifyEmailOTP(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []  # No authentication required for registration
 
-    async def post(self, request):
+    def post(self, request):
         try:
             logger.info("[VerifyEmailOTP POST] API called")
 
@@ -124,50 +124,49 @@ class VerifyEmailOTP(APIView):
                 logger.warning("[VerifyEmailOTP POST] OTP or token missing")
                 return JsonResponse({"error": "OTP and token required"}, status=400)
 
-            ip = await sync_to_async(get_client_ip)(request)
+            ip = get_client_ip(request)
             
-            valid_attempt = await sync_to_async(check_token_attempt)(token, ip)
+            valid_attempt = check_token_attempt(token, ip)
             if not valid_attempt:
                 logger.warning(f"[VerifyEmailOTP POST] Too many token attempts from IP: {ip}")
                 return JsonResponse({"error": "Too many attempts"}, status=429)
 
-            email = await sync_to_async(get_email_from_token)(token)
+            email = get_email_from_token(token)
             if not email:
                 logger.warning("[VerifyEmailOTP POST] Invalid or expired verification token")
                 return JsonResponse({"error": "Invalid or expired token"}, status=400)
 
-            otp_attempt = await sync_to_async(check_otp_attempt)(email)
+            otp_attempt = check_otp_attempt(email)
             if not otp_attempt:
                 logger.warning(f"[VerifyEmailOTP POST] Too many OTP attempts for email: {email}")
                 return JsonResponse({"error": "Too many wrong attempts"}, status=429)
 
-            valid, msg = await sync_to_async(verify_otp)(email, otp)
+            valid, msg = verify_otp(email, otp)
             if not valid:
                 logger.warning(f"[VerifyEmailOTP POST] Invalid OTP entered for email: {email}")
                 return JsonResponse({"error": msg}, status=400)
 
             logger.info(f"[VerifyEmailOTP POST] OTP verified successfully for email: {email}")
 
-            user_data = await cache.aget(f"register:{email}")
+            user_data = cache.get(f"register:{email}")
             if not user_data:
                 logger.warning(f"[VerifyEmailOTP POST] Registration session expired for email: {email}")
                 return JsonResponse({"error": "Session expired"}, status=400)
 
             serializer = UserRegistrationSerializer(data=user_data)
 
-            is_valid = await validate_serializer(serializer)
-            if not is_valid:
+            if not serializer.is_valid():
                 logger.error(f"[VerifyEmailOTP POST] Serializer validation failed for email: {email} | Errors: {serializer.errors}")
                 return JsonResponse(serializer.errors, status=400)
 
             logger.info(f"[VerifyEmailOTP POST] Serializer validated successfully for email: {email}")
-            await save_serializer(serializer, is_verified=True)
+            serializer.save(is_verified=True)
             logger.info(f"[VerifyEmailOTP POST] User account created successfully for email: {email}")
 
-            user = await Users.objects.aget(user_email=email)
+            user = Users.objects.get(user_email=email)
 
             logger.info(f"[VerifyEmailOTP POST] Sending welcome notification to user: {email}")
-            await sync_to_async(notify_user)(
+            notify_user(
                 recipient=user,
                 title="Welcome to Job Portal",
                 message="Your account was created successfully",
@@ -175,9 +174,8 @@ class VerifyEmailOTP(APIView):
                 send_email=True
             )
 
-            await sync_to_async(clear_verification_cache)(email, token, ip)
-            
-            await cache.adelete(f"register:{email}")
+            clear_verification_cache(email, token, ip)
+            cache.delete(f"register:{email}")
             logger.info(f"[VerifyEmailOTP POST] Caches cleared. Registration complete for email: {email}")
 
             return JsonResponse({"message": "Registration successful"}, status=200)
@@ -190,8 +188,9 @@ class VerifyEmailOTP(APIView):
 @method_decorator(ratelimit(key='ip', rate='3/m', block=True), name='post')
 class ResendOTP(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []  # No authentication required for registration
 
-    async def post(self, request):
+    def post(self, request):
         try:
             logger.info("[ResendOTP POST] API called")
 
@@ -201,21 +200,21 @@ class ResendOTP(APIView):
                 logger.warning("[ResendOTP POST] Verify token missing")
                 return JsonResponse({"error": "Token required"}, status=400)
 
-            email = await sync_to_async(get_email_from_token)(token)
+            email = get_email_from_token(token)
             if not email:
                 logger.warning("[ResendOTP POST] Invalid or expired token")
                 return JsonResponse({"error": "Invalid or expired token"}, status=400)
 
             logger.info(f"[ResendOTP POST] Resending OTP for email: {email}")
 
-            await cache.adelete(f"otp_attempt:{email}")
+            cache.delete(f"otp_attempt:{email}")
 
-            otp = await sync_to_async(generate_otp)(email, request)
+            otp = generate_otp(email, request)
             if not otp:
                 logger.warning(f"[ResendOTP POST] OTP resend limit exceeded for email: {email}")
                 return JsonResponse({"error": "Too many requests. Try later."}, status=429)
 
-            await sync_to_async(send_otp_email_task.delay)(email, otp)
+            send_otp_email_task.delay(email, otp)
             logger.info(f"[ResendOTP POST] OTP resend email task queued successfully for email: {email}")
 
             return JsonResponse({"message": "OTP resent successfully"}, status=200)

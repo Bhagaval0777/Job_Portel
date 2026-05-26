@@ -38,12 +38,27 @@
         overflow-y: auto;
     }
 
+    .form-group {
+        display: flex;
+        gap: 10px;
+    }
+
+    .form-group > div {
+        flex: 1;
+    }
+
     input, select, textarea, button {
         width: 100%;
         padding: 8px;
         margin: 8px 0;
         border-radius: 5px;
         border: 1px solid #ccc;
+        box-sizing: border-box;
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 80px;
     }
 
     button {
@@ -51,6 +66,7 @@
         color: white;
         border: none;
         cursor: pointer;
+        font-weight: bold;
     }
 
     button:hover {
@@ -71,6 +87,13 @@
         padding: 5px 10px;
     }
 
+    label {
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: #4b5563;
+        display: block;
+        margin-top: 10px;
+    }
 </style>
 </head>
 
@@ -78,15 +101,12 @@
 
 <div class="container">
 
-    <!-- LEFT SIDE -->
     <div class="sidebar">
 
-        <!-- CREATE CATEGORY -->
         <h2>Create Category</h2>
         <input type="text" id="categoryName" placeholder="Category Name">
         <button onclick="createCategory()">Create</button>
 
-        <!-- JOB LIST -->
         <h2>My Jobs</h2>
         <button onclick="loadJobs()">Refresh Jobs</button>
 
@@ -94,31 +114,101 @@
 
     </div>
 
-    <!-- RIGHT SIDE -->
     <div class="main">
 
         <h1>Create Job</h1>
 
+        <label>Job Title</label>
         <input type="text" id="title" placeholder="Job Title">
-        <textarea id="description" placeholder="Description"></textarea>
-        <input type="text" id="location" placeholder="Location">
+        
+        <label>Description</label>
+        <textarea id="description" placeholder="Full Job Description..."></textarea>
+        
+        <label>Location</label>
+        <input type="text" id="location" placeholder="City, State, or 'Remote'">
 
-        <select id="jobType">
-            <option value="FULL_TIME">Full Time</option>
-            <option value="PART_TIME">Part Time</option>
-            <option value="INTERNSHIP">Internship</option>
-            <option value="CONTRACT">Contract</option>
-        </select>
+        <div class="form-group">
+            <div>
+                <label>Work Type</label>
+                <select id="workType">
+                    <option value="FULL_TIME">Full Time</option>
+                    <option value="PART_TIME">Part Time</option>
+                </select>
+            </div>
+            <div>
+                <label>Work Mode</label>
+                <select id="workMode">
+                    <option value="ONSITE">Onsite</option>
+                    <option value="REMOTE">Remote</option>
+                    <option value="HYBRID">Hybrid</option>
+                </select>
+            </div>
+            <div>
+                <label>Employment Type</label>
+                <select id="employmentType">
+                    <option value="PERMANENT">Permanent</option>
+                    <option value="CONTRACT">Contract</option>
+                    <option value="FREELANCE">Freelance</option>
+                    <option value="INTERNSHIP">Internship</option>
+                </select>
+            </div>
+        </div>
 
-        <input type="number" id="experience" placeholder="Years of Experience">
-        <input type="number" id="salaryMin" placeholder="Min Salary">
-        <input type="number" id="salaryMax" placeholder="Max Salary">
+        <div class="form-group">
+            <div>
+                <label>Experience Level</label>
+                <select id="experienceLevel">
+                    <option value="FRESHER">Fresher</option>
+                    <option value="JUNIOR">Junior</option>
+                    <option value="MID" selected>Mid Level</option>
+                    <option value="SENIOR">Senior</option>
+                    <option value="LEAD">Lead</option>
+                </select>
+            </div>
+            <div>
+                <label>Years of Exp.</label>
+                <input type="number" id="experience" placeholder="e.g. 3" min="0">
+            </div>
+        </div>
 
-        <input type="text" id="skills" placeholder="Skills (comma separated)">
-        <input type="text" id="tags" placeholder="Tags (comma separated)">
-        <input type="number" id="categoryId" placeholder="Category ID">
+        <div class="form-group">
+            <div>
+                <label>Min Salary</label>
+                <input type="number" step="0.01" id="salaryMin" placeholder="0.00">
+            </div>
+            <div>
+                <label>Max Salary</label>
+                <input type="number" step="0.01" id="salaryMax" placeholder="0.00">
+            </div>
+        </div>
 
-        <button onclick="createJob()">Create Job</button>
+        <label>Skills Required (comma separated)</label>
+        <input type="text" id="skills" placeholder="e.g. Python, Django, React">
+        
+        <label>Tags (comma separated)</label>
+        <input type="text" id="tags" placeholder="e.g. backend, remote, startup">
+
+        <div class="form-group">
+            <div>
+                <label>Deadline</label>
+                <input type="date" id="deadline">
+            </div>
+            <div>
+                <label>Vacancies</label>
+                <input type="number" id="vacancies" placeholder="1" min="1" value="1">
+            </div>
+            <div>
+                <label>Initial Status</label>
+                <select id="status">
+                    <option value="DRAFT">Draft</option>
+                    <option value="OPEN">Open</option>
+                    <option value="CLOSED">Closed</option>
+                    <option value="EXPIRED">Expired</option>
+                </select>
+            </div>
+        </div>
+
+        <button onclick="createJob()" style="margin-top: 20px; padding: 15px;">Create Job</button>
 
     </div>
 
@@ -128,9 +218,13 @@
 const BASE_URL = "http://127.0.0.1:8000";
 const TOKEN = "YOUR_ACCESS_TOKEN"; // 🔴 replace this
 
+// Helper to safely parse comma-separated lists into arrays
+const parseArray = (str) => str.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
 // CREATE CATEGORY
 async function createCategory() {
     const name = document.getElementById("categoryName").value;
+    if (!name) return alert("Category name is required");
 
     const res = await fetch(`${BASE_URL}/jobs/categories/create/`, {
         method: "POST",
@@ -147,7 +241,7 @@ async function createCategory() {
 
 // LOAD JOBS
 async function loadJobs() {
-    const res = await fetch(`${BASE_URL}/jobs/create/`, {
+    const res = await fetch(`${BASE_URL}/jobs/create/`, { // Adjust endpoint if it is a GET to list jobs
         headers: {
             "Authorization": `Bearer ${TOKEN}`
         }
@@ -157,36 +251,59 @@ async function loadJobs() {
     const container = document.getElementById("jobList");
     container.innerHTML = "";
 
-    data.data.forEach(job => {
-        const div = document.createElement("div");
-        div.className = "job-card";
+    if (data.data) {
+        data.data.forEach(job => {
+            const div = document.createElement("div");
+            div.className = "job-card";
 
-        div.innerHTML = `
-            <b>${job.title}</b><br>
-            Status: ${job.status}<br>
-            <small>${job.title_slug}</small><br>
+            div.innerHTML = `
+                <b>${job.title}</b><br>
+                Status: ${job.status}<br>
+                <small>${job.title_slug}</small><br>
 
-            <button onclick="updateJob('${job.title_slug}')">Open</button>
-            <button onclick="deleteJob('${job.title_slug}')">Delete</button>
-        `;
+                <button onclick="updateJob('${job.title_slug}')">Set Open</button>
+                <button onclick="deleteJob('${job.title_slug}')">Delete</button>
+            `;
 
-        container.appendChild(div);
-    });
+            container.appendChild(div);
+        });
+    }
 }
 
 // CREATE JOB
 async function createJob() {
+    const deadlineVal = document.getElementById("deadline").value;
+    const salaryMin = parseFloat(document.getElementById("salaryMin").value);
+    const salaryMax = parseFloat(document.getElementById("salaryMax").value);
+
     const payload = {
         title: document.getElementById("title").value,
         description: document.getElementById("description").value,
         location: document.getElementById("location").value,
-        job_type: document.getElementById("jobType").value,
-        years_of_experience: parseInt(document.getElementById("experience").value),
-        salary_min: document.getElementById("salaryMin").value,
-        salary_max: document.getElementById("salaryMax").value,
-        skills_required: document.getElementById("skills").value.split(","),
-        tags: document.getElementById("tags").value.split(","),
-        category: document.getElementById("categoryId").value
+        
+        // Exact choice matches
+        work_type: document.getElementById("workType").value,
+        work_mode: document.getElementById("workMode").value,
+        employment_type: document.getElementById("employmentType").value,
+        experience_level: document.getElementById("experienceLevel").value,
+        status: document.getElementById("status").value,
+        
+        // Numerics
+        years_of_experience: parseInt(document.getElementById("experience").value) || 0,
+        vacancies: parseInt(document.getElementById("vacancies").value) || 1,
+        salary_min: isNaN(salaryMin) ? null : salaryMin,
+        salary_max: isNaN(salaryMax) ? null : salaryMax,
+        
+        // Foreign Keys
+        category: parseInt(document.getElementById("categoryId").value) || null,
+        company: parseInt(document.getElementById("companyId").value) || null,
+        
+        // Arrays (safely stripped of empty strings/spaces)
+        skills_required: parseArray(document.getElementById("skills").value),
+        tags: parseArray(document.getElementById("tags").value),
+        
+        // Dates (Only attach if user actually selected a date)
+        ...(deadlineVal && { deadline: deadlineVal })
     };
 
     const res = await fetch(`${BASE_URL}/jobs/create/`, {
@@ -199,10 +316,15 @@ async function createJob() {
     });
 
     const data = await res.json();
-    alert(data.message || "Created");
+    if(res.ok) {
+        alert("Job Created Successfully");
+        loadJobs(); // Refresh sidebar automatically
+    } else {
+        alert("Error: " + JSON.stringify(data));
+    }
 }
 
-// UPDATE JOB
+// UPDATE JOB (Example: Quick set to OPEN)
 async function updateJob(slug) {
     const res = await fetch(`${BASE_URL}/jobs/update/?title_slug=${slug}`, {
         method: "PATCH",
@@ -214,7 +336,8 @@ async function updateJob(slug) {
     });
 
     const data = await res.json();
-    alert(data.message);
+    alert(data.message || "Updated");
+    loadJobs();
 }
 
 // DELETE JOB
@@ -227,7 +350,8 @@ async function deleteJob(slug) {
     });
 
     const data = await res.json();
-    alert(data.message);
+    alert(data.message || "Deleted");
+    loadJobs();
 }
 </script>
 

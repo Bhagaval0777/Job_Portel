@@ -1,34 +1,15 @@
 from django.urls import path
-from .views import CompanyViewSet, RecruiterViewSet
+from .views import CompanyViewSet, RecruiterViewSet, CompanyProfileTemplate, RecruiterProfileTemplate
 
-# Defining the app name for namespacing
-app_name = 'profiles'
+app_name = "recruiter"
 
 urlpatterns = [
-    # --- Company URLs ---
-    # Matches: /companies/
+    path('company/profile/', CompanyProfileTemplate, name='company-profile'),
+    path('profile/', RecruiterProfileTemplate, name='recruiter-profile'),
     path('companies/', CompanyViewSet.as_view({'get': 'list', 'post': 'create'}), name='company-list'),
-    
-    # Matches: /companies/<id>/
-    path('companies/<int:pk>/', CompanyViewSet.as_view({
-        'get': 'retrieve', 
-        'put': 'update', 
-        'patch': 'partial_update', 
-        'delete': 'destroy'
-    }), name='company-detail'),
-
-    # --- Recruiter URLs ---
-    # Matches: /profiles/
-    path('profiles/', RecruiterViewSet.as_view({
-        'get': 'list', 
-        'post': 'create'
-    }), name='recruiter-list'),
-    
-    # Matches: /profiles/<id>/
-    path('profiles/<int:pk>/', RecruiterViewSet.as_view({
-        'get': 'retrieve', 
-        'put': 'update', 
-        'patch': 'partial_update', 
-        'delete': 'destroy'
-    }), name='recruiter-detail'),
+    path('companies/<int:pk>/', CompanyViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='company-detail'),
+    path('', RecruiterViewSet.as_view({'post': 'create'}), name='recruiter-create'),
+    path('me/', RecruiterViewSet.as_view({'get': 'me', 'patch': 'me'}), name='recruiter-me'),
+    path('<int:pk>/', RecruiterViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='recruiter-detail'),
+    path('<int:pk>/give-access/', RecruiterViewSet.as_view({'post': 'give_access'}), name='give-access'),
 ]

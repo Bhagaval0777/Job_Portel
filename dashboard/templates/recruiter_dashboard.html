@@ -23,11 +23,7 @@
         --neutral-900: #111827;
     }
     
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     
     body { 
         background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 100%);
@@ -35,489 +31,100 @@
         color: var(--neutral-700);
     }
     
-    .dashboard-container {
-        min-height: 100vh;
-        padding: 2rem;
-    }
+    .dashboard-container { min-height: 100vh; padding: 2rem; }
     
     /* Header Section */
-    .dashboard-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 3rem;
-        flex-wrap: wrap;
-        gap: 1.5rem;
-    }
+    .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; flex-wrap: wrap; gap: 1.5rem; }
+    .header-content h1 { font-size: 2rem; font-weight: 700; color: var(--neutral-900); letter-spacing: -0.5px; }
+    .header-content p { font-size: 0.95rem; color: var(--neutral-600); margin-top: 0.5rem; }
     
-    .header-content h1 {
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--neutral-900);
-        letter-spacing: -0.5px;
-    }
+    .header-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-decoration: none; text-align: center; }
+    .btn-primary { background-color: var(--primary-color); color: white; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3); }
+    .btn-primary:hover { background-color: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); }
+    .btn-secondary { background-color: var(--neutral-100); color: var(--neutral-700); border: 1px solid var(--neutral-200); }
+    .btn-secondary:hover { background-color: var(--neutral-200); transform: translateY(-2px); }
     
-    .header-content p {
-        font-size: 0.95rem;
-        color: var(--neutral-600);
-        margin-top: 0.5rem;
-    }
-    
-    .header-actions {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-    }
-    
-    .btn {
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        text-decoration: none;
-    }
-    
-    .btn-primary {
-        background-color: var(--primary-color);
-        color: white;
-        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
-    }
-    
-    .btn-primary:hover {
-        background-color: var(--primary-dark);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
-    }
-    
-    .btn-secondary {
-        background-color: var(--neutral-100);
-        color: var(--neutral-700);
-        border: 1px solid var(--neutral-200);
-    }
-    
-    .btn-secondary:hover {
-        background-color: var(--neutral-200);
-        transform: translateY(-2px);
-    }
-    
-    /* Stats Grid */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2.5rem;
-    }
-    
-    .stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.75rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        border: 1px solid var(--neutral-200);
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .stat-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, var(--primary-color), var(--info-color));
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
-        border-color: var(--primary-light);
-    }
-    
-    .stat-card.jobs::before {
-        background: linear-gradient(90deg, #2563eb, #1e40af);
-    }
-    
-    .stat-card.applicants::before {
-        background: linear-gradient(90deg, #10b981, #047857);
-    }
-    
-    .stat-card.active::before {
-        background: linear-gradient(90deg, #f59e0b, #d97706);
-    }
-    
-    .stat-card.new::before {
-        background: linear-gradient(90deg, #ef4444, #dc2626);
-    }
-    
-    .stat-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
-    }
-    
-    .stat-card.jobs .stat-icon {
-        background-color: var(--primary-light);
-        color: var(--primary-color);
-    }
-    
-    .stat-card.applicants .stat-icon {
-        background-color: var(--success-light);
-        color: var(--success-color);
-    }
-    
-    .stat-card.active .stat-icon {
-        background-color: var(--warning-light);
-        color: var(--warning-color);
-    }
-    
-    .stat-card.new .stat-icon {
-        background-color: var(--danger-light);
-        color: var(--danger-color);
-    }
-    
-    .stat-label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--neutral-600);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 0.75rem;
-    }
-    
-    .stat-value {
-        font-size: 2.25rem;
-        font-weight: 700;
-        color: var(--neutral-900);
-        line-height: 1;
-    }
-    
-    .stat-change {
-        font-size: 0.8rem;
-        margin-top: 0.75rem;
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-    
-    .stat-change.positive {
-        color: var(--success-color);
-    }
-    
-    .stat-change.negative {
-        color: var(--danger-color);
-    }
-    
+    /* Layout for Dual Profiles */
+    .profiles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+
     /* Profile Completion Card */
-    .profile-card {
-        background: white;
-        border-radius: 12px;
-        padding: 2rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        border: 1px solid var(--neutral-200);
-        margin-bottom: 2.5rem;
-    }
+    .profile-card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); border: 1px solid var(--neutral-200); display: flex; flex-direction: column; justify-content: space-between; }
+    .profile-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
+    .profile-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--neutral-900); }
+    .profile-header p { font-size: 0.85rem; color: var(--neutral-600); margin-top: 0.25rem; }
+    .completion-badge { background-color: var(--primary-light); color: var(--primary-color); padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.9rem; }
+    .progress-bar-container { background-color: var(--neutral-200); height: 8px; border-radius: 10px; overflow: hidden; margin-bottom: 0.75rem; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary-color), var(--info-color)); border-radius: 10px; transition: width 0.3s ease; }
+    .progress-tips { font-size: 0.85rem; color: var(--neutral-600); margin-bottom: 1.5rem; }
     
-    .profile-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1.5rem;
-    }
-    
-    .profile-header h3 {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--neutral-900);
-    }
-    
-    .profile-header p {
-        font-size: 0.85rem;
-        color: var(--neutral-600);
-        margin-top: 0.25rem;
-    }
-    
-    .completion-badge {
-        background-color: var(--primary-light);
-        color: var(--primary-color);
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-    
-    .progress-bar-container {
-        background-color: var(--neutral-200);
-        height: 8px;
-        border-radius: 10px;
-        overflow: hidden;
-        margin-bottom: 0.75rem;
-    }
-    
-    .progress-bar {
-        height: 100%;
-        background: linear-gradient(90deg, var(--primary-color), var(--info-color));
-        border-radius: 10px;
-        transition: width 0.3s ease;
-    }
-    
-    .progress-tips {
-        font-size: 0.85rem;
-        color: var(--neutral-600);
-        margin-bottom: 1.5rem; /* Added padding to clear space for the action container */
-    }
+    .profile-card-action { width: 100%; margin-top: auto; }
+    .btn-edit-profile { background-color: var(--neutral-900); color: #ffffff; width: 100%; }
+    .btn-edit-profile:hover { background-color: var(--neutral-700); transform: translateY(-2px); }
 
-    /* Profile Button Specific Layout Engine Elements */
-    .profile-card-action {
-        width: 100%;
-    }
-
-    .btn-edit-profile {
-        background-color: var(--primary-color);
-        color: #ffffff;
-        width: 100%;
-    }
-
-    .btn-edit-profile:hover {
-        background-color: var(--neutral-700);
-        transform: translateY(-2px);
-    }
+    /* Stats Grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+    .stat-card { background: white; border-radius: 12px; padding: 1.75rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); border: 1px solid var(--neutral-200); transition: all 0.3s ease; position: relative; overflow: hidden; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--primary-color), var(--info-color)); }
+    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12); border-color: var(--primary-light); }
+    .stat-card.jobs::before { background: linear-gradient(90deg, #2563eb, #1e40af); }
+    .stat-card.applicants::before { background: linear-gradient(90deg, #10b981, #047857); }
+    .stat-card.active::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .stat-card.new::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
+    .stat-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1rem; }
+    .stat-card.jobs .stat-icon { background-color: var(--primary-light); color: var(--primary-color); }
+    .stat-card.applicants .stat-icon { background-color: var(--success-light); color: var(--success-color); }
+    .stat-card.active .stat-icon { background-color: var(--warning-light); color: var(--warning-color); }
+    .stat-card.new .stat-icon { background-color: var(--danger-light); color: var(--danger-color); }
+    .stat-label { font-size: 0.85rem; font-weight: 600; color: var(--neutral-600); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem; }
+    .stat-value { font-size: 2.25rem; font-weight: 700; color: var(--neutral-900); line-height: 1; }
+    .stat-change { font-size: 0.8rem; margin-top: 0.75rem; display: flex; align-items: center; gap: 0.25rem; }
+    .stat-change.positive { color: var(--success-color); }
+    .stat-change.negative { color: var(--danger-color); }
     
     /* Content Card */
-    .content-card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        border: 1px solid var(--neutral-200);
-        overflow: hidden;
-    }
-    
-    .card-header {
-        background-color: var(--neutral-50);
-        padding: 1.5rem;
-        border-bottom: 1px solid var(--neutral-200);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .card-header h2 {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--neutral-900);
-        margin: 0;
-    }
-    
-    .filter-group {
-        display: flex;
-        gap: 0.5rem;
-    }
-    
-    .filter-btn {
-        padding: 0.5rem 1rem;
-        border: 1px solid var(--neutral-200);
-        background-color: white;
-        border-radius: 6px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: var(--neutral-700);
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    
-    .filter-btn:hover,
-    .filter-btn.active {
-        background-color: var(--primary-color);
-        color: white;
-        border-color: var(--primary-color);
-    }
-    
-    .card-body {
-        padding: 0;
-    }
+    .content-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); border: 1px solid var(--neutral-200); overflow: hidden; }
+    .card-header { background-color: var(--neutral-50); padding: 1.5rem; border-bottom: 1px solid var(--neutral-200); display: flex; justify-content: space-between; align-items: center; }
+    .card-header h2 { font-size: 1.1rem; font-weight: 700; color: var(--neutral-900); margin: 0; }
+    .filter-group { display: flex; gap: 0.5rem; }
+    .filter-btn { padding: 0.5rem 1rem; border: 1px solid var(--neutral-200); background-color: white; border-radius: 6px; font-size: 0.9rem; font-weight: 500; color: var(--neutral-700); cursor: pointer; transition: all 0.2s ease; }
+    .filter-btn:hover, .filter-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+    .card-body { padding: 0; }
     
     /* Table Styling */
-    .table {
-        width: 100%;
-        border-collapse: collapse;
-    }
+    .table { width: 100%; border-collapse: collapse; }
+    .table thead { background-color: var(--neutral-50); border-bottom: 2px solid var(--neutral-200); }
+    .table th { padding: 1rem 1.5rem; text-align: left; font-size: 0.8rem; font-weight: 700; color: var(--neutral-600); text-transform: uppercase; letter-spacing: 0.5px; }
+    .table td { padding: 1rem 1.5rem; border-bottom: 1px solid var(--neutral-100); }
+    .table tbody tr { transition: all 0.2s ease; }
+    .table tbody tr:hover { background-color: var(--neutral-50); }
+    .job-title { font-weight: 700; color: var(--neutral-900); font-size: 0.95rem; }
+    .job-category { font-size: 0.85rem; color: var(--neutral-600); margin-top: 0.25rem; }
+    .badge { display: inline-block; padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; text-transform: capitalize; }
+    .badge-open { background-color: var(--success-light); color: var(--success-color); }
+    .badge-closed { background-color: var(--danger-light); color: var(--danger-color); }
+    .badge-draft { background-color: var(--warning-light); color: var(--warning-color); }
+    .applicants-count { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--primary-color); }
+    .date-posted { font-size: 0.9rem; color: var(--neutral-600); }
+    .action-buttons { display: flex; gap: 0.5rem; }
+    .btn-action { padding: 0.5rem 0.75rem; border: 1px solid var(--neutral-200); background-color: white; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500; color: var(--primary-color); transition: all 0.2s ease; }
+    .btn-action:hover { background-color: var(--primary-light); border-color: var(--primary-color); }
+    .empty-state { text-align: center; padding: 3rem 1.5rem; }
+    .empty-icon { font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; }
+    .empty-text { color: var(--neutral-600); font-size: 1rem; margin-bottom: 1.5rem; }
     
-    .table thead {
-        background-color: var(--neutral-50);
-        border-bottom: 2px solid var(--neutral-200);
-    }
-    
-    .table th {
-        padding: 1rem 1.5rem;
-        text-align: left;
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: var(--neutral-600);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .table td {
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--neutral-100);
-    }
-    
-    .table tbody tr {
-        transition: all 0.2s ease;
-    }
-    
-    .table tbody tr:hover {
-        background-color: var(--neutral-50);
-    }
-    
-    .job-title {
-        font-weight: 700;
-        color: var(--neutral-900);
-        font-size: 0.95rem;
-    }
-    
-    .job-category {
-        font-size: 0.85rem;
-        color: var(--neutral-600);
-        margin-top: 0.25rem;
-    }
-    
-    .badge {
-        display: inline-block;
-        padding: 0.375rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        text-transform: capitalize;
-    }
-    
-    .badge-open {
-        background-color: var(--success-light);
-        color: var(--success-color);
-    }
-    
-    .badge-closed {
-        background-color: var(--danger-light);
-        color: var(--danger-color);
-    }
-    
-    .badge-draft {
-        background-color: var(--warning-light);
-        color: var(--warning-color);
-    }
-    
-    .applicants-count {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-weight: 600;
-        color: var(--primary-color);
-    }
-    
-    .date-posted {
-        font-size: 0.9rem;
-        color: var(--neutral-600);
-    }
-    
-    .action-buttons {
-        display: flex;
-        gap: 0.5rem;
-    }
-    
-    .btn-action {
-        padding: 0.5rem 0.75rem;
-        border: 1px solid var(--neutral-200);
-        background-color: white;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 0.85rem;
-        font-weight: 500;
-        color: var(--primary-color);
-        transition: all 0.2s ease;
-    }
-    
-    .btn-action:hover {
-        background-color: var(--primary-light);
-        border-color: var(--primary-color);
-    }
-    
-    .empty-state {
-        text-align: center;
-        padding: 3rem 1.5rem;
-    }
-    
-    .empty-icon {
-        font-size: 3rem;
-        opacity: 0.3;
-        margin-bottom: 1rem;
-    }
-    
-    .empty-text {
-        color: var(--neutral-600);
-        font-size: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    /* Responsive */
     @media (max-width: 768px) {
-        .dashboard-container {
-            padding: 1rem;
-        }
-        
-        .dashboard-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        
-        .header-content h1 {
-            font-size: 1.5rem;
-        }
-        
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .table {
-            font-size: 0.85rem;
-        }
-        
-        .table th,
-        .table td {
-            padding: 0.75rem;
-        }
-        
-        .action-buttons {
-            flex-wrap: wrap;
-        }
+        .dashboard-container { padding: 1rem; }
+        .dashboard-header { flex-direction: column; align-items: flex-start; }
+        .header-content h1 { font-size: 1.5rem; }
+        .stats-grid, .profiles-grid { grid-template-columns: 1fr; }
+        .table { font-size: 0.85rem; }
+        .table th, .table td { padding: 0.75rem; }
+        .action-buttons { flex-wrap: wrap; }
     }
     
-    /* Loading Animation */
-    .spinner {
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        border: 2px solid var(--neutral-200);
-        border-top-color: var(--primary-color);
-        border-radius: 50%;
-        animation: spin 0.6s linear infinite;
-    }
-    
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--neutral-200); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
 <div class="dashboard-container">
@@ -533,26 +140,54 @@
         </div>
     </div>
 
-    <div class="profile-card">
-        <div class="profile-header">
+    <div class="profiles-grid">
+        
+        <div class="profile-card">
             <div>
-                <h3>Company Profile Strength</h3>
-                <p>Complete profiles get 40% more qualified applicants</p>
+                <div class="profile-header">
+                    <div>
+                        <h3>Recruiter Profile</h3>
+                        <p>Keep your personal contact info up to date</p>
+                    </div>
+                    <span class="completion-badge" id="recruiter-completion-text">0% Complete</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="recruiter-completion-bar" class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="progress-tips">
+                    <strong>💡 Tip:</strong> Ensure your phone number and designation are accurate for candidates to reach you.
+                </div>
             </div>
-            <span class="completion-badge" id="completion-text">0% Complete</span>
+            <div class="profile-card-action">
+                <a href="{% url 'recruiter:recruiter-profile' %}" class="btn btn-secondary" style="width: 100%;">
+                    <span>👤</span> Edit Personal Profile
+                </a>
+            </div>
         </div>
-        <div class="progress-bar-container">
-            <div id="completion-bar" class="progress-bar" style="width: 0%;"></div>
-        </div>
-        <div class="progress-tips">
-            <strong>💡 Pro Tip:</strong> Add a company logo, description, and culture to boost visibility and attract top talent.
+
+        <div class="profile-card">
+            <div>
+                <div class="profile-header">
+                    <div>
+                        <h3>Company Profile</h3>
+                    </div>
+                    <span class="completion-badge" id="company-completion-text">0% Complete</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="company-completion-bar" class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="progress-tips">
+                    <strong>💡 Pro Tip:</strong> Add a company description, location, and industry.
+                </div>
+            </div>
+            
+            <div class="profile-card-action" id="company-actions-container">
+                <div style="text-align: center; padding: 10px;">
+                    <div class="spinner"></div>
+                </div>
+            </div>
         </div>
         
-        <div class="profile-card-action">
-            <a href="#" class="btn btn-edit-profile">
-                <span>⚙️</span> Complete Your Profile
-            </a>
-        </div>
     </div>
 
     <div class="stats-grid">
@@ -560,33 +195,25 @@
             <div class="stat-icon">📋</div>
             <div class="stat-label">Total Job Postings</div>
             <div class="stat-value" id="stat-total-jobs">0</div>
-            <div class="stat-change positive">
-                <span>↑</span> Active on platform
-            </div>
+            <div class="stat-change positive"><span>↑</span> Active on platform</div>
         </div>
         <div class="stat-card applicants">
             <div class="stat-icon">👥</div>
             <div class="stat-label">Total Applicants</div>
             <div class="stat-value" id="stat-total-apps">0</div>
-            <div class="stat-change positive">
-                <span>↑</span> This month
-            </div>
+            <div class="stat-change positive"><span>↑</span> This month</div>
         </div>
         <div class="stat-card active">
             <div class="stat-icon">⚡</div>
             <div class="stat-label">Active Roles</div>
             <div class="stat-value" id="stat-active-jobs">0</div>
-            <div class="stat-change positive">
-                <span>↑</span> Open positions
-            </div>
+            <div class="stat-change positive"><span>↑</span> Open positions</div>
         </div>
         <div class="stat-card new">
             <div class="stat-icon">🆕</div>
             <div class="stat-label">New Applications</div>
             <div class="stat-value" id="stat-new-apps">0</div>
-            <div class="stat-change positive">
-                <span>↑</span> This week
-            </div>
+            <div class="stat-change positive"><span>↑</span> This week</div>
         </div>
     </div>
 
@@ -603,7 +230,6 @@
         <div class="card-body">
             <table class="table">
                 <thead>
-                
                     <tr>
                         <th>Job Role</th>
                         <th>Status</th>
@@ -628,11 +254,12 @@
 <script>
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', async () => {
+    // We only need one API call now to fetch everything
     await loadDashboardData();
     initializeFilters();
 });
 
-// Load dashboard data
+// Load unified dashboard data
 async function loadDashboardData() {
     try {
         const fetchFn = window.authFetch || fetch;
@@ -651,21 +278,48 @@ async function loadDashboardData() {
         
         const data = await response.json();
         
-        // Update profile completion
-        const completion = data.profile_completion || 0;
-        document.getElementById('completion-text').textContent = `${completion}% Complete`;
-        document.getElementById('completion-bar').style.width = `${completion}%`;
+        // 1. Update Recruiter Profile Completion
+        const recruiterCompletion = data.recruiter_profile_completion || 0;
+        document.getElementById('recruiter-completion-text').textContent = `${recruiterCompletion}% Complete`;
+        document.getElementById('recruiter-completion-bar').style.width = `${recruiterCompletion}%`;
+
+        // 2. Update Company Profile Completion
+        const companyCompletion = data.company_profile_completion || 0;
+        document.getElementById('company-completion-text').textContent = `${companyCompletion}% Complete`;
+        document.getElementById('company-completion-bar').style.width = `${companyCompletion}%`;
+
+        // 3. Setup Role-Based Company Profile Buttons
+        const companyContainer = document.getElementById('company-actions-container');
         
-        // Update stats
+        if (!data.has_company) {
+            // No company linked yet
+            companyContainer.innerHTML = `
+                <a href="{% url 'recruiter:company-profile' %}" class="btn btn-primary" style="width: 100%;">
+                    <span>➕</span> Create New Company Profile
+                </a>
+            `;
+        } else if (data.is_company_admin) {
+            // Recruiter IS the admin - full edit privileges 
+            companyContainer.innerHTML = `
+                <a href="/recruiter/company/profile/?id=${data.company_id}" class="btn btn-edit-profile" style="width: 100%;">
+                    <span>🏢</span> Edit Company Profile
+                </a>
+            `;
+        } else {
+            // Recruiter IS NOT the admin - view only privileges
+            companyContainer.innerHTML = `
+                <a href="/recruiter/company/profile/?id=${data.company_id}" class="btn btn-secondary" style="width: 100%;">
+                    <span>👁️</span> View Company Profile
+                </a>
+            `;
+        }
+        
+        // Update Stats Summary
         const summary = data.status_summary || {};
-        document.getElementById('stat-total-jobs').textContent = 
-            summary.total_job_postings || '0';
-        document.getElementById('stat-total-apps').textContent = 
-            summary.total_applicants_received || '0';
-        document.getElementById('stat-active-jobs').textContent = 
-            summary.active_postings || '0';
-        document.getElementById('stat-new-apps').textContent = 
-            summary.new_this_week || '0';
+        document.getElementById('stat-total-jobs').textContent = summary.total_job_postings || '0';
+        document.getElementById('stat-total-apps').textContent = summary.total_applicants_received || '0';
+        document.getElementById('stat-active-jobs').textContent = summary.active_postings || '0';
+        document.getElementById('stat-new-apps').textContent = summary.new_this_week || '0';
         
         // Populate job listings table
         populateJobTable(data.my_job_postings || []);
@@ -686,7 +340,7 @@ function populateJobTable(jobs) {
                 <td colspan="5" class="empty-state">
                     <div class="empty-icon">📭</div>
                     <div class="empty-text">No job listings yet</div>
-                    <button class="btn btn-primary" onclick="window.location.href='#'">
+                    <button class="btn btn-primary" onclick="window.location.href='{% url 'Job-creation' %}'">
                         Post Your First Job
                     </button>
                 </td>
@@ -752,7 +406,6 @@ function applyFilter(filter) {
         if (!statusCell) return;
         
         const status = statusCell.textContent.trim().toLowerCase();
-        
         if (filter === 'all' || status === filter) {
             row.style.display = '';
         } else {
@@ -776,9 +429,7 @@ function formatDate(dateString) {
             return 'Yesterday';
         } else {
             return date.toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
+                month: 'short', day: 'numeric', year: 'numeric' 
             });
         }
     } catch (e) {
