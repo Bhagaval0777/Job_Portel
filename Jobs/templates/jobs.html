@@ -29,6 +29,11 @@
         margin-top: 20px;
         border-bottom: 1px solid #444;
         padding-bottom: 5px;
+        font-size: 1.2rem;
+    }
+
+    .sidebar h2:first-of-type {
+        margin-top: 0; /* Keeps the top neat */
     }
 
     /* RIGHT CONTENT */
@@ -94,6 +99,37 @@
         display: block;
         margin-top: 10px;
     }
+
+    /* --- CATEGORY SEARCH RESULTS STYLES --- */
+    #categoryResults {
+        background: white;
+        color: #111827; /* Force dark text since sidebar is dark */
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        max-height: 150px;
+        overflow-y: auto;
+        display: none; 
+        margin-bottom: 15px;
+    }
+
+    .category-item {
+        padding: 10px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+        font-size: 0.9rem;
+    }
+
+    .category-item:hover {
+        background-color: #dbeafe; 
+    }
+    
+    .selected-indicator {
+        color: #4ade80; /* Brighter green to show up on the dark sidebar */
+        font-size: 0.85rem;
+        font-weight: bold;
+        margin-bottom: 15px;
+        display: none;
+    }
 </style>
 </head>
 
@@ -103,19 +139,27 @@
 
     <div class="sidebar">
 
+        <h2>Select Category (For Job)</h2>
+        <div style="display: flex; gap: 5px; margin-top: 5px; margin-bottom: 5px;">
+            <input type="text" id="categorySearch" placeholder="Type category name..." style="margin: 0; color: black;">
+            <button onclick="searchCategory()" style="width: auto; margin: 0; padding: 8px 15px;">Search</button>
+        </div>
+        
+        <div id="categoryResults"></div>
+        
+        <div id="selectedCategoryMsg" class="selected-indicator">✓ Category Selected</div>
+        
+        <input type="hidden" id="categoryId">
         <h2>Create Category</h2>
-        <input type="text" id="categoryName" placeholder="Category Name">
+        <input type="text" id="categoryName" placeholder="Category Name" style="color: black;">
         <button onclick="createCategory()">Create</button>
 
         <h2>My Jobs</h2>
         <button onclick="loadJobs()">Refresh Jobs</button>
-
         <div id="jobList"></div>
-
     </div>
 
     <div class="main">
-
         <h1>Create Job</h1>
 
         <label>Job Title</label>
@@ -208,6 +252,8 @@
             </div>
         </div>
 
+        <input type="hidden" id="companyId" value="">
+
         <button onclick="createJob()" style="margin-top: 20px; padding: 15px;">Create Job</button>
 
     </div>
@@ -220,6 +266,146 @@ const TOKEN = "YOUR_ACCESS_TOKEN"; // 🔴 replace this
 
 // Helper to safely parse comma-separated lists into arrays
 const parseArray = (str) => str.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+// --- CATEGORY SEARCH LOGIC ---
+// Add these variables outside the function to track state
+let currentCategoryPage = 1;
+let currentCategoryQuery = "";
+
+async function searchCategory(page = 1) {
+    const queryInput = document.getElementById("categorySearch").value.trim();
+    const resultsContainer = document.getElementById("categoryResults");
+
+    // Hide previous selection indicator if they are making a NEW search
+    document.getElementById("selectedCategoryMsg").style.display = "none";
+    document.getElementById("categoryId").value = ""; 
+
+    if (queryInput.length === 0) {
+        alert("Please enter a category name to search.");
+        return;
+    }
+
+    // If this is a brand new search (not a pagination click), reset to page 1
+    if (page === 1) {
+        currentCategoryQuery = queryInput;
+        currentCategoryPage = 1;
+    } else {
+        currentCategoryPage = page;
+    }
+
+    try {
+        // Fetch from Django Backend - Fixed the page query parameter!
+        const res = await fetch(`${BASE_URL}/jobs/categories/search/?q=${currentCategoryQuery}&page=${currentCategoryPage}`, {
+            headers: {
+                "Authorization": `Bearer ${TOKEN}`
+            }
+        });
+
+        const data = await res.json();
+        resultsContainer.innerHTML = "";
+
+        // Safely extract items whether DRF wraps them in pagination metadata or not
+        let items = [];
+        let hasNextPage = false;
+        let hasPrevPage = false;
+
+        if (data.results && Array.isArray(data.results)) {
+            // Unpaginated flat list
+            items = data.results;
+        } else if (data.results && data.results.results) {
+            // Standard DRF Pagination format: { count, next, previous, results: { ... } }
+            items = data.results.results;
+            hasNextPage = data.next !== null;
+            hasPrevPage = data.previous !== null;
+        }
+
+        if (items.length > 0) {
+            // 1. Loop through and add the category items
+            items.forEach(cat => {
+                const div = document.createElement("div");
+                div.className = "category-item";
+                div.textContent = `${cat.name} (${cat.slug})`;
+                
+                div.onclick = () => selectCategory(cat.category_id, cat.name);
+                resultsContainer.appendChild(div);
+            });
+
+            // 2. Build the Pagination Controls UI
+            const paginationDiv = document.createElement("div");
+            paginationDiv.style.display = "flex";
+            paginationDiv.style.justifyContent = "space-between";
+            paginationDiv.style.alignItems = "center";
+            paginationDiv.style.padding = "10px";
+            paginationDiv.style.borderTop = "1px solid #ccc";
+            paginationDiv.style.background = "#f9fafb";
+
+            // PREV BUTTON
+            const prevBtn = document.createElement("button");
+            prevBtn.textContent = "« Prev";
+            prevBtn.style.width = "auto";
+            prevBtn.style.margin = "0";
+            prevBtn.style.padding = "5px 10px";
+            if (currentCategoryPage > 1) {
+                prevBtn.onclick = () => searchCategory(currentCategoryPage - 1);
+            } else {
+                prevBtn.disabled = true;
+                prevBtn.style.opacity = "0.5";
+                prevBtn.style.cursor = "not-allowed";
+            }
+
+            // PAGE INDICATOR
+            const pageInfo = document.createElement("span");
+            pageInfo.textContent = `Page ${currentCategoryPage}`;
+            pageInfo.style.fontSize = "0.85rem";
+            pageInfo.style.color = "#444";
+            pageInfo.style.fontWeight = "bold";
+
+            // NEXT BUTTON
+            const nextBtn = document.createElement("button");
+            nextBtn.textContent = "Next »";
+            nextBtn.style.width = "auto";
+            nextBtn.style.margin = "0";
+            nextBtn.style.padding = "5px 10px";
+            // Disable if we got less than 10 items (meaning it's the last page)
+            if (items.length === 10 || hasNextPage) {
+                nextBtn.onclick = () => searchCategory(currentCategoryPage + 1);
+            } else {
+                nextBtn.disabled = true;
+                nextBtn.style.opacity = "0.5";
+                nextBtn.style.cursor = "not-allowed";
+            }
+
+            // Append controls
+            paginationDiv.appendChild(prevBtn);
+            paginationDiv.appendChild(pageInfo);
+            paginationDiv.appendChild(nextBtn);
+            resultsContainer.appendChild(paginationDiv);
+
+            resultsContainer.style.display = "block"; 
+        } else {
+            resultsContainer.innerHTML = "<div style='padding: 10px; color: #888;'>No categories found. Try a different search.</div>";
+            resultsContainer.style.display = "block";
+        }
+    } catch (error) {
+        console.error("Failed to search categories:", error);
+        alert("Server error while searching categories.");
+    }
+}
+
+function selectCategory(id, name) {
+    // 1. Set the hidden ID that createJob() will use
+    document.getElementById("categoryId").value = id;      
+    
+    // 2. Put the selected name in the input box so the user sees it
+    document.getElementById("categorySearch").value = name;  
+    
+    // 3. Hide the results dropdown
+    document.getElementById("categoryResults").style.display = "none"; 
+    
+    // 4. Show a green checkmark message
+    document.getElementById("selectedCategoryMsg").style.display = "block";
+}
+// ------------------------------------
 
 // CREATE CATEGORY
 async function createCategory() {
@@ -241,7 +427,7 @@ async function createCategory() {
 
 // LOAD JOBS
 async function loadJobs() {
-    const res = await fetch(`${BASE_URL}/jobs/create/`, { // Adjust endpoint if it is a GET to list jobs
+    const res = await fetch(`${BASE_URL}/jobs/create/`, { 
         headers: {
             "Authorization": `Bearer ${TOKEN}`
         }
@@ -275,34 +461,37 @@ async function createJob() {
     const deadlineVal = document.getElementById("deadline").value;
     const salaryMin = parseFloat(document.getElementById("salaryMin").value);
     const salaryMax = parseFloat(document.getElementById("salaryMax").value);
+    
+    // Retrieve the categoryId set by our selectCategory function
+    const categoryId = parseInt(document.getElementById("categoryId").value);
+
+    // Validate that a category was searched and selected
+    if (isNaN(categoryId)) {
+        return alert("Please search for and select a Category in the left sidebar before creating a job.");
+    }
 
     const payload = {
         title: document.getElementById("title").value,
         description: document.getElementById("description").value,
         location: document.getElementById("location").value,
         
-        // Exact choice matches
         work_type: document.getElementById("workType").value,
         work_mode: document.getElementById("workMode").value,
         employment_type: document.getElementById("employmentType").value,
         experience_level: document.getElementById("experienceLevel").value,
         status: document.getElementById("status").value,
         
-        // Numerics
         years_of_experience: parseInt(document.getElementById("experience").value) || 0,
         vacancies: parseInt(document.getElementById("vacancies").value) || 1,
         salary_min: isNaN(salaryMin) ? null : salaryMin,
         salary_max: isNaN(salaryMax) ? null : salaryMax,
         
-        // Foreign Keys
-        category: parseInt(document.getElementById("categoryId").value) || null,
-        company: parseInt(document.getElementById("companyId").value) || null,
+        category: categoryId,
+        // 🔴 REMOVED: 'company' field is gone! The backend handles it securely now.
         
-        // Arrays (safely stripped of empty strings/spaces)
         skills_required: parseArray(document.getElementById("skills").value),
         tags: parseArray(document.getElementById("tags").value),
         
-        // Dates (Only attach if user actually selected a date)
         ...(deadlineVal && { deadline: deadlineVal })
     };
 
@@ -318,13 +507,13 @@ async function createJob() {
     const data = await res.json();
     if(res.ok) {
         alert("Job Created Successfully");
-        loadJobs(); // Refresh sidebar automatically
+        loadJobs(); 
     } else {
         alert("Error: " + JSON.stringify(data));
     }
 }
 
-// UPDATE JOB (Example: Quick set to OPEN)
+// UPDATE JOB 
 async function updateJob(slug) {
     const res = await fetch(`${BASE_URL}/jobs/update/?title_slug=${slug}`, {
         method: "PATCH",

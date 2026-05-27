@@ -17,6 +17,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from notification.helpers import notify_user
 from notification.tasks import notify_matching_users_task
 from Jobs.models import Job, Category
+from recruiter.models import Recruiter
 from Jobs.serializers import (
     JobCreateSerializer, JobListSerializer, JobUpdateSerializer, 
     CategoryCreateSerializer, CategoryUpdateSerializer
@@ -61,7 +62,7 @@ class CategorySearchAPIView(BaseAPIView):
             query = request.GET.get("q", "").strip().lower()
             page_number = request.GET.get("page", 1)
 
-            logger.info(f"[CategorySearchAPIView GET] Request by user={request.user.id} | query='{query}' | page={page_number}")
+            logger.info(f"[CategorySearchAPIView GET] Request by user={request.user.user_id} | query='{query}' | page={page_number}")
 
             cache_key = f"category_search_{query}_{page_number}"
             cached_data = await cache.aget(cache_key)
@@ -100,7 +101,7 @@ class CategorySearchAPIView(BaseAPIView):
             await cache.aset(cache_key, response_data, CACHE_TIMEOUT)
             logger.info(f"[CategorySearchAPIView GET] Cache miss populated key={cache_key} | results counted={len(results)}")
 
-            return paginator.get_paginated_response(response_data)
+            return Response(response_data)
 
         except DatabaseError as db_err:
             logger.error(f"[CategorySearchAPIView GET] Database error: {str(db_err)}", exc_info=True)
@@ -349,7 +350,24 @@ class JobListCreateAPIView(BaseAPIView):
             if is_valid:
                 validated_data = serializer.validated_data
                 validated_data["recruiter"] = request.user
-                
+                try:
+                    # Use aget() to safely run the query in the async event loop
+                    recruiter_profile = await Recruiter.objects.aget(user=request.user)
+                    
+                    # 3. Securely inject the company_id 
+                    validated_data["company_id"] = recruiter_profile.company_id
+                    
+                except Recruiter.DoesNotExist:
+                    # This acts as our safety check if a jobseeker/admin tries to post
+                    logger.warning(f"[JobListCreateAPIView POST] User {request.user.user_id} attempted to post a job without a recruiter profile.")
+                    return Response(
+                        {
+                            "success": False, 
+                            "message": "Only registered recruiters with an assigned company can post jobs."
+                        },
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
                 logger.info(f"[JobListCreateAPIView POST] Saving new instance metadata title='{validated_data.get('title')}'")
                 
                 # Safely execute row creation & validation on structural worker thread pools
@@ -416,7 +434,7 @@ class JobRetrieveUpdateDeleteAPIView(BaseAPIView):
     
     async def get_object(self, title_slug, user):
         try:
-            logger.info(f"[JobRetrieveUpdateDeleteAPIView Helper] Running filter locate pipeline for title_slug='{title_slug}' | user={user.id}")
+            logger.info(f"[JobRetrieveUpdateDeleteAPIView Helper] Running filter locate pipeline for title_slug='{title_slug}' | user={user.user_id}")
             return await Job.objects.select_related("category", "recruiter").filter(
                 title_slug=title_slug, 
                 recruiter=user

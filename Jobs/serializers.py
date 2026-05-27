@@ -77,7 +77,8 @@ class JobCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         exclude = ["created_at", "updated_at", "recruiter","title_slug"]
-
+        read_only_fields = ['company', 'recruiter']
+        
     def validate(self, attrs):
         return validate_salary_range(attrs, instance=self.instance)
 
