@@ -58,13 +58,14 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
+    'django_filters',
     'adrf',
     'channels',
     'axes',
     
     # (Note: 'django_redis' usually doesn't need to be in INSTALLED_APPS at all, 
     # as it's configured in the CACHES setting. But it's harmless if kept here).
-    'django_redis', 
+    'django_redis',
 
     # 4. Your Local/Custom Apps
     'Users',
@@ -74,6 +75,7 @@ INSTALLED_APPS = [
     'JobApplicationManagement',
     'dashboard',
     'notification',
+    'ApplingForJobs',
     'subscriptions',
 ]
 

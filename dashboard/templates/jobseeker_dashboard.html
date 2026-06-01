@@ -294,7 +294,7 @@
             <p>You've applied to <strong id="total-applied">0</strong> positions. Keep pushing towards your dream job!</p>
         </div>
         <div class="header-actions">
-            <a href="/jobs/" class="btn-primary">🔍 Browse Jobs</a>
+            <a href="javascript:void(0)" data-url="{% url 'ApplingForJobs:job-search-ui' %}" onclick="secureNavigate(this.dataset.url)" class="btn-primary">🔍 Browse Jobs</a>
         </div>
     </header>
 
@@ -448,44 +448,49 @@
     function populateApplicationsTable(applications) {
         const tbody = document.querySelector('.table tbody');
         if (!tbody) return;
+        
         if (applications.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 4rem 2rem;"><div style="font-size: 3rem;">📭</div><div style="font-weight: 700; color: var(--neutral-900); margin: 1rem 0;">No applications yet</div><p style="color: var(--neutral-600); margin-bottom: 1.5rem;">Start browsing opportunities.</p><a href="/jobs/" class="btn-primary" style="font-size: 0.9rem; padding: 0.6rem 1.2rem;">🔍 Browse Jobs</a></td></tr>';
+            // FIX 1: Updated the empty state button to use your secure navigation and Django URL
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 4rem 2rem;">
+                        <div style="font-size: 3rem;">📭</div>
+                        <div style="font-weight: 700; color: var(--neutral-900); margin: 1rem 0;">No applications yet</div>
+                        <p style="color: var(--neutral-600); margin-bottom: 1.5rem;">Start browsing opportunities.</p>
+                        <a href="javascript:void(0)" onclick="secureNavigate('{% url 'ApplingForJobs:job-search-ui' %}')" class="btn-primary" style="font-size: 0.9rem; padding: 0.6rem 1.2rem;">🔍 Browse Jobs</a>
+                    </td>
+                </tr>`;
             return;
         }
-tbody.innerHTML = applications.map(app => `
-    <tr>
-        <td>
-            <div style="font-weight: 700; color: var(--neutral-900);">
-                ${escapeHtml(app.job_title || 'N/A')}
-            </div>
-            <div style="font-size: 0.8rem; color: var(--neutral-600);">
-                ${escapeHtml(app.category || 'N/A')}
-            </div>
-        </td>
-        <td style="font-weight: 600;">
-            ${escapeHtml(app.company || 'N/A')}
-        </td>
-        <td>
-            <span class="job-badge badge-${app.status.toLowerCase()}">
-                ${escapeHtml(app.status)}
-            </span>
-        </td>
-        <td style="font-size: 0.85rem; color: var(--neutral-600);">
-            ${formatDate(app.date)}
-        </td>
-        </td>
-        <td style="text-align: right;">
-            <button class="btn-action view-details-btn"  onclick="secureNavigate('/applications/apply/${app.application_id}/')"}">
-                View Details
-            </button>
-        </td>
-    </tr>
-`).join('');        document.querySelectorAll('.view-details-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const appId = this.getAttribute('data-app-id');
-                if (appId) window.location.href = '/job-applications/' + appId + '/';
-            });
-        });
+
+        tbody.innerHTML = applications.map(app => `
+            <tr>
+                <td>
+                    <div style="font-weight: 700; color: var(--neutral-900);">
+                        ${escapeHtml(app.job_title || 'N/A')}
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--neutral-600);">
+                        ${escapeHtml(app.category || 'N/A')}
+                    </div>
+                </td>
+                <td style="font-weight: 600;">
+                    ${escapeHtml(app.company || 'N/A')}
+                </td>
+                <td>
+                    <span class="job-badge badge-${(app.status || 'pending').toLowerCase()}">
+                        ${escapeHtml(app.status || 'Pending')}
+                    </span>
+                </td>
+                <td style="font-size: 0.85rem; color: var(--neutral-600);">
+                    ${formatDate(app.date)}
+                </td>
+                <td style="text-align: right;">
+                    <button class="btn-action view-details-btn" onclick="secureNavigate('/applications/${app.application_id}/')">
+                        View Details
+                    </button>
+                </td>
+            </tr>
+        `).join('');
     }
 
     function showError(message) {

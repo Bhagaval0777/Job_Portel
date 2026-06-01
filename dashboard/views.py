@@ -183,8 +183,6 @@ class RecruiterDashboardView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
         return render(request, 'recruiter_dashboard.html')
-    
-
 
 class AppliedCandidatesView(APIView):
     permission_classes = [AllowAny]
@@ -204,7 +202,7 @@ class AppliedCandidatesDataView(APIView):
 
         try:
             # We use job_id=job_id here because your model uses 'job_id' as the field name
-            job = Job.objects.get(job_id=job_id, recruiter=profile)
+            job = Job.objects.get(job_id=job_id, recruiter=user)
         except Job.DoesNotExist:
             return Response({"detail": "Job not found or unauthorized"}, status=404)
 

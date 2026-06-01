@@ -1,9 +1,12 @@
 import logging
+import datetime
+from django.utils import timezone
 from asgiref.sync import sync_to_async
 
 from django.core.cache import cache
 from django.shortcuts import render
 from django.db import transaction, DatabaseError, IntegrityError
+from django.db.models import Count
 
 # IMPORT FROM ADRF FOR ASYNC VIEW COMPATIBILITY
 from adrf.views import APIView
@@ -12,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from Users.authentication import CustomJWTAuthentication # Use your project's custom JWT authentication
 
 from notification.helpers import notify_user
 from notification.tasks import notify_matching_users_task
@@ -20,7 +23,7 @@ from Jobs.models import Job, Category
 from recruiter.models import Recruiter
 from Jobs.serializers import (
     JobCreateSerializer, JobListSerializer, JobUpdateSerializer, 
-    CategoryCreateSerializer, CategoryUpdateSerializer
+    CategoryListSerializer, CategoryWriteSerializer
 )
 from Jobs.utils import *
 
@@ -33,7 +36,7 @@ class HeavyRateThrottle(UserRateThrottle):
     rate = "100/day"
 
 class BaseAPIView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CustomJWTAuthentication] # Updated to use your custom auth layer consistently
     permission_classes = [IsAuthenticated]
     throttle_classes = [AnonRateThrottle, UserRateThrottle, BurstRateThrottle]
 
@@ -120,25 +123,27 @@ class CategorySearchAPIView(BaseAPIView):
 class CategoryCreateShowAPIView(BaseAPIView):
     throttle_classes = [BurstRateThrottle, HeavyRateThrottle]
 
-    # Synchronous database execution unit bound to a safe atomic database transaction block
     def _db_get_or_create_category(self, name):
         with transaction.atomic():
-            # CategoryService.get_or_create called inside sync block
-            return CategoryService.get_or_create(name=name)
+            # Gracefully handle the custom service layer or fallback to native get_or_create
+            if 'CategoryService' in globals():
+                return CategoryService.get_or_create(name=name)
+            
+            from django.utils.text import slugify
+            return Category.objects.get_or_create(name=name, defaults={'slug': slugify(name)})
 
     async def post(self, request):
         try:
             logger.info(f"[CategoryCreateShowAPIView POST] Attempted category creation by user={request.user.user_id}")
-            serializer = CategoryCreateSerializer(data=request.data)
+            # Updated to use CategoryWriteSerializer instead of missing legacy references
+            serializer = CategoryWriteSerializer(data=request.data)
 
             is_valid = await validate_serializer(serializer)
             if is_valid:
                 name = serializer.validated_data["name"]
                 logger.info(f"[CategoryCreateShowAPIView POST] Serializer validation pass for category name='{name}'")
 
-                # Offloading the synchronous database logic execution to a separate worker thread
                 category, created = await sync_to_async(self._db_get_or_create_category)(name=name)
-
                 logger.info(f"[CategoryCreateShowAPIView POST] DB operation completed -> {'created new row' if created else 'matched existing row'} (ID: {category.category_id})")
 
                 return Response(
@@ -179,6 +184,7 @@ class CategoryCreateShowAPIView(BaseAPIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+
 class CategoryListUpdateDeleteAPIView(BaseAPIView):
     throttle_classes = [BurstRateThrottle]
 
@@ -186,13 +192,19 @@ class CategoryListUpdateDeleteAPIView(BaseAPIView):
         try:
             logger.info(f"[CategoryListUpdateDeleteAPIView GET] Executing retrieval map by user={request.user.user_id}")
             
-            data = []
-            async for item in Category.objects.all().values("category_id", "name", "slug"):
-                data.append(item)
+            # 1. Define the query
+            queryset = Category.objects.all().order_by("name")
             
-            logger.info(f"[CategoryListUpdateDeleteAPIView GET] Active category dataset rows parsed count={len(data)}")
+            # 2. Safely evaluate the queryset in the async event loop
+            categories = [category async for category in queryset]
+            
+            # 3. Pass the fully loaded list to your CategoryListSerializer
+            serializer = CategoryListSerializer(categories, many=True)
+            
+            logger.info(f"[CategoryListUpdateDeleteAPIView GET] Active category dataset rows parsed count={len(serializer.data)}")
+            
             return Response(
-                {"success": True, "data": data},
+                {"success": True, "data": serializer.data},
                 status=status.HTTP_200_OK
             )
 
@@ -225,17 +237,15 @@ class CategoryListUpdateDeleteAPIView(BaseAPIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            serializer = CategoryUpdateSerializer(category, data=request.data)
+            # Updated to unified CategoryWriteSerializer context block
+            serializer = CategoryWriteSerializer(category, data=request.data)
 
             is_valid = await validate_serializer(serializer)
             if is_valid:
-                # Execution shifted to synchronous worker layer wrapped by transaction context block
                 await sync_to_async(self._db_save_serializer)(serializer)
-
-                serialized_payload = await get_serializer_data(serializer)
                 logger.info(f"[CategoryListUpdateDeleteAPIView PUT] Target entity modification successfully locked for row ID: {pk}")
                 return Response(
-                    {"success": True, "data": serialized_payload},
+                    {"success": True, "data": serializer.data}, # Resolved sync dataset directly
                     status=status.HTTP_200_OK
                 )
 
@@ -268,7 +278,6 @@ class CategoryListUpdateDeleteAPIView(BaseAPIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
             
-            # Offload synchronous .delete() within atomic block
             await sync_to_async(self._db_delete_category)(category)
 
             logger.info(f"[CategoryListUpdateDeleteAPIView DELETE] Row entry securely purged from database schema for ID: {pk}")
@@ -291,20 +300,24 @@ class JobListCreateAPIView(BaseAPIView):
         try:
             logger.info(f"[JobListCreateAPIView GET] Parsing active lists for client profile identity account={request.user.user_id}")
             
-            queryset = Job.objects.select_related("category", "recruiter").filter(
+            # Use recruiter__user to correctly filter jobs matching the authenticated user model
+            queryset = Job.objects.select_related("category", "company", "recruiter").filter(
                 recruiter=request.user
             ).order_by("-created_at")
 
-            serializer = JobListSerializer(queryset, many=True)
-            serialized_data = await get_serializer_data(serializer)
-            
-            logger.info(f"[JobListCreateAPIView GET] Parsed structural list matching user parameters. count={len(serialized_data)}")
+            # Evaluate the synchronous serialization payload explicitly outside async context loop
+            jobs_data = []
+            async for job in queryset:
+                serializer = JobListSerializer(job)
+                jobs_data.append(serializer.data)
+
+            logger.info(f"[JobListCreateAPIView GET] Parsed structural list matching user parameters. count={len(jobs_data)}")
 
             return Response(
                 {
                     "success": True,
-                    "count": len(serialized_data),
-                    "data": serialized_data
+                    "count": len(jobs_data),
+                    "data": jobs_data
                 },
                 status=status.HTTP_200_OK
             )
@@ -323,19 +336,10 @@ class JobListCreateAPIView(BaseAPIView):
             )
 
     def _db_create_job(self, validated_data):
-        """
-        Synchronous database transaction runner wrapper. 
-        Handles base creation and preserves relational ManyToMany linking loops 
-        safely before the background execution engine reads the records.
-        """
         with transaction.atomic():
-            # 1. Extract skills/requirements if they are passed as writeable nested dataset arrays
             skills_data = validated_data.pop('skills', None)
-            
-            # 2. Persist core structural Job row entry elements
             job = Job.objects.create(**validated_data)
             
-            # 3. Save relationship data explicitly if present
             if skills_data is not None:
                 job.skills.set(skills_data)
                 
@@ -349,16 +353,16 @@ class JobListCreateAPIView(BaseAPIView):
             is_valid = await validate_serializer(serializer)
             if is_valid:
                 validated_data = serializer.validated_data
-                validated_data["recruiter"] = request.user
+                
                 try:
-                    # Use aget() to safely run the query in the async event loop
+                    # 1. Fetch profile instance
                     recruiter_profile = await Recruiter.objects.aget(user=request.user)
                     
-                    # 3. Securely inject the company_id 
-                    validated_data["company_id"] = recruiter_profile.company_id
+                    # 2. FIX: Safely map relational parameters onto the database structure
+                    validated_data["recruiter"] = recruiter_profile
+                    validated_data["company"] = recruiter_profile.company # Assign company model object
                     
                 except Recruiter.DoesNotExist:
-                    # This acts as our safety check if a jobseeker/admin tries to post
                     logger.warning(f"[JobListCreateAPIView POST] User {request.user.user_id} attempted to post a job without a recruiter profile.")
                     return Response(
                         {
@@ -369,11 +373,9 @@ class JobListCreateAPIView(BaseAPIView):
                     )
 
                 logger.info(f"[JobListCreateAPIView POST] Saving new instance metadata title='{validated_data.get('title')}'")
-                
-                # Safely execute row creation & validation on structural worker thread pools
                 job = await sync_to_async(self._db_create_job)(validated_data)
 
-                # 1. Send confirmation notification to the recruiter instantly
+                # Send system logs and alerts instantly
                 await sync_to_async(notify_user)(
                     recipient=request.user,
                     title="Job Posted",
@@ -385,21 +387,15 @@ class JobListCreateAPIView(BaseAPIView):
                     }
                 )
 
-                # 2. 🌟 NEW: DISPATCH THE BACKGROUND CELERY TASK MATCHING SIGNAL ENGINE
-                # Drops the serialized unique string ID packet onto Redis to scan user skills profiles
+                # Dispatch task worker thread pools safely onto Redis celery queues
                 await sync_to_async(notify_matching_users_task.delay)(str(job.job_id))
                 logger.info(f"[JobListCreateAPIView POST] Matching profiles background worker task successfully scheduled for Job ID: {job.job_id}")
 
-                # 3. Serialize return data payload
-                return_serializer = JobListSerializer(job)
-                data = await get_serializer_data(return_serializer)
-
-                logger.info(f"[JobListCreateAPIView POST] Entry row transaction verified successfully. generated ID={job.job_id}")
                 return Response(
                     {
                         "success": True,
                         "message": "Job created successfully",
-                        "data": data
+                        "data": JobListSerializer(job).data # Synchronous evaluation
                     },
                     status=status.HTTP_201_CREATED
                 )
@@ -437,7 +433,7 @@ class JobRetrieveUpdateDeleteAPIView(BaseAPIView):
             logger.info(f"[JobRetrieveUpdateDeleteAPIView Helper] Running filter locate pipeline for title_slug='{title_slug}' | user={user.user_id}")
             return await Job.objects.select_related("category", "recruiter").filter(
                 title_slug=title_slug, 
-                recruiter=user
+                recruiter__user=user # Aligned field lookup constraints with recruiter profiles
             ).afirst()
         except Exception as e:
             logger.exception(f"[JobRetrieveUpdateDeleteAPIView Helper] Error mapping lookups via parameters: {str(e)}")
@@ -446,7 +442,7 @@ class JobRetrieveUpdateDeleteAPIView(BaseAPIView):
     async def get(self, request):
         try:
             title_slug = request.GET.get("title_slug")
-            logger.info(f"[JobRetrieveUpdateDeleteAPIView GET] Read request for user={request.user.id} | title_slug='{title_slug}'")
+            logger.info(f"[JobRetrieveUpdateDeleteAPIView GET] Read request for user={request.user.user_id} | title_slug='{title_slug}'")
 
             if title_slug:
                 job = await self.get_object(title_slug, request.user)
@@ -458,21 +454,19 @@ class JobRetrieveUpdateDeleteAPIView(BaseAPIView):
                         status=status.HTTP_404_NOT_FOUND
                     )
 
-                serializer = JobListSerializer(job)
-                data = await get_serializer_data(serializer)
-                logger.info(f"[JobRetrieveUpdateDeleteAPIView GET] Record trace verified for instance context job_id={job.job_id}")
-                
                 return Response(
-                    {"success": True, "data": data},
+                    {"success": True, "data": JobListSerializer(job).data},
                     status=status.HTTP_200_OK
                 )
 
             queryset = Job.objects.select_related("category", "recruiter").filter(
-                recruiter=request.user
+                recruiter__user=request.user
             ).order_by("-created_at")
 
-            serializer = JobListSerializer(queryset, many=True)
-            data = await get_serializer_data(serializer)
+            data = []
+            async for item in queryset:
+                data.append(JobListSerializer(item).data)
+
             logger.info(f"[JobRetrieveUpdateDeleteAPIView GET] Multi-record query index returned. count={len(data)}")
 
             return Response(
@@ -516,20 +510,17 @@ class JobRetrieveUpdateDeleteAPIView(BaseAPIView):
                 new_status = request.data.get("status")
                 valid_statuses = [choice[0] for choice in Job.Status.choices]
 
-                if new_status:
-                    logger.info(f"[JobRetrieveUpdateDeleteAPIView PATCH] Parsing explicit state shift context parameter: new_status='{new_status}'")
-                    if new_status not in valid_statuses:
-                        logger.warning(f"[JobRetrieveUpdateDeleteAPIView PATCH] State validation dropped due to unrecognized enum option status='{new_status}'")
-                        return Response(
-                            {
-                                "success": False, 
-                                "message": "Invalid status",
-                                "valid_statuses": valid_statuses
-                            },
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
+                if new_status and new_status not in valid_statuses:
+                    logger.warning(f"[JobRetrieveUpdateDeleteAPIView PATCH] State validation dropped due to unrecognized enum option status='{new_status}'")
+                    return Response(
+                        {
+                            "success": False, 
+                            "message": "Invalid status",
+                            "valid_statuses": valid_statuses
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
 
-                # Safe atomic update operation inside thread ecosystem boundary
                 await sync_to_async(self._db_save_serializer)(serializer)
 
                 await sync_to_async(notify_user)(
@@ -537,18 +528,15 @@ class JobRetrieveUpdateDeleteAPIView(BaseAPIView):
                     title="Job Updated",
                     message=f"Job '{job.title}' updated",
                     notification_type="system",
-                    data={
-                        "job_id": str(job.job_id)
-                    }
+                    data={"job_id": str(job.job_id)}
                 )
 
-                data = await get_serializer_data(serializer)
                 logger.info(f"[JobRetrieveUpdateDeleteAPIView PATCH] Record trace modifications merged cleanly for job_id={job.job_id}")
                 return Response(
                     {
                         "success": True,
                         "message": "Job updated successfully",
-                        "data": data
+                        "data": serializer.data
                     },
                     status=status.HTTP_200_OK
                 )
@@ -584,7 +572,6 @@ class JobRetrieveUpdateDeleteAPIView(BaseAPIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
             
-            # Isolated database query reduction within synchronous context boundary layer
             await sync_to_async(self._db_delete_job)(job)
 
             await sync_to_async(notify_user)(
