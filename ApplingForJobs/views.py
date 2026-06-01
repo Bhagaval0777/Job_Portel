@@ -1,7 +1,8 @@
 import logging
 from django.shortcuts import get_object_or_404
 from django.db import transaction
-
+from django.db.models import Q
+from rest_framework import generics
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -9,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import render
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.permissions import AllowAny
 
 # Custom Authentication
@@ -32,41 +34,72 @@ class JobSearchUIView(APIView):
     def get(self, request):
         return render(request, 'job_search.html')
     
-class JobSearchAPIView(generics.ListAPIView):
+class SuggestedJobsAPIView(generics.ListAPIView):
     """
-    Optimized API endpoint for Jobseekers to search and filter active jobs.
+    API 1: Returns jobs where AT LEAST ONE skill matches the user's profile.
     """
-    # Updated to use the correct List serializer
     serializer_class = JobListSerializer 
     authentication_classes = [CustomJWTAuthentication]
     permission_classes = [IsAuthenticated]
+    
+    # Optional: You can still order them by newest first
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        # 1. Start with all open jobs
+        queryset = Job.objects.filter(status='OPEN').select_related('category', 'company')
+        print(queryset)
+        try:
+            # 2. Get the logged-in user's skills as a flat list of strings
+            # This looks at the 'skill_name' field on your Skill model
+            skills_queryset = self.request.user.jobseeker_profile.skills.values_list('skill_name', flat=True)
+            
+            # Convert the queryset to a standard Python list
+            user_skills = list(skills_queryset)
+            
+            if user_skills and len(user_skills) > 0:
+                # 3. Create an empty OR query
+                skill_query = Q()
+                
+                # 4. If ANY single skill matches, the job will be included
+                for skill in user_skills:
+                    skill_query |= Q(skills_required__icontains=skill.strip())
+                
+                # Apply the filter and remove duplicate jobs just in case multiple skills matched
+                return queryset.filter(skill_query).distinct()
+                
+        except (AttributeError, ObjectDoesNotExist):
+            # Catch ObjectDoesNotExist just in case a user exists but hasn't created a JobSeekerProfile yet
+            pass
+            
+        # 5. If the user has no skills or no profile, return an empty queryset
+        return Job.objects.none()
+    
+class FilterJobsAPIView(generics.ListAPIView):
+    """
+    API 2: Standard search and filtering based on user inputs (Keywords, Location, etc.)
+    """
+    serializer_class = JobListSerializer 
+    authentication_classes = [CustomJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    # 1. Enable standard DRF filtering tools
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
 
-    # EXACT match filters
-    filterset_fields = ['category__name', 'company__location', 'job_type']
+    # 2. EXACT match filters (e.g., dropdowns or exact strings)
+    filterset_fields = ['category__name', 'company__location', 'work_type']
 
-    # KEYWORD search
+    # 3. KEYWORD search (e.g., typing in a search bar)
     search_fields = ['title', 'description', 'company__name']
 
-    # SORTING
+    # 4. Sorting capabilities
     ordering_fields = ['created_at', 'salary_min', 'salary_max']
     ordering = ['-created_at'] 
 
     def get_queryset(self):
-        """
-        Dynamically optimized queryset to prevent N+1 query problems.
-        """
-        # Note: If 'skills_required' is not a ManyToMany field on your Job model, 
-        # you can remove the prefetch_related line safely.
-        return Job.objects.filter(
-            status='open'
-        ).select_related(
-            'category', 
-            'company'
-        ).prefetch_related(
-            'skills' # Ensure this matches your actual ManyToMany field name, e.g., 'skills'
-        )
-
+        # Just return all open jobs. The filter_backends will automatically 
+        # slice this down based on what the user passes in the URL.
+        return Job.objects.filter(status='OPEN').select_related('category', 'company')
 
 class ApplyForJobAPIView(APIView):
     """
