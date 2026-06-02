@@ -5,9 +5,17 @@
 <title>Job Dashboard</title>
 
 <style>
+    :root {
+        --primary-color: #2563eb;
+        --primary-dark: #1e40af;
+        --success-color: #10b981;
+        --danger-color: #ef4444;
+        --warning-color: #eab308;
+    }
+
     body {
         margin: 0;
-        font-family: Arial, sans-serif;
+        font-family: 'Segoe UI', Arial, sans-serif;
         background: #f4f6f9;
     }
 
@@ -26,26 +34,27 @@
     }
 
     .sidebar h2 {
-        margin-top: 20px;
+        margin-top: 25px;
         border-bottom: 1px solid #444;
-        padding-bottom: 5px;
+        padding-bottom: 8px;
         font-size: 1.2rem;
     }
 
     .sidebar h2:first-of-type {
-        margin-top: 0; /* Keeps the top neat */
+        margin-top: 0;
     }
 
     /* RIGHT CONTENT */
     .main {
         width: 70%;
-        padding: 20px;
+        padding: 30px;
         overflow-y: auto;
+        background: white;
     }
 
     .form-group {
         display: flex;
-        gap: 10px;
+        gap: 15px;
     }
 
     .form-group > div {
@@ -54,66 +63,85 @@
 
     input, select, textarea, button {
         width: 100%;
-        padding: 8px;
-        margin: 8px 0;
-        border-radius: 5px;
-        border: 1px solid #ccc;
+        padding: 10px;
+        margin: 8px 0 15px 0;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
         box-sizing: border-box;
+        font-family: inherit;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
     }
 
     textarea {
         resize: vertical;
-        min-height: 80px;
+        min-height: 100px;
     }
 
     button {
-        background: #2563eb;
+        background: var(--primary-color);
         color: white;
         border: none;
         cursor: pointer;
         font-weight: bold;
+        transition: background 0.2s;
     }
 
     button:hover {
-        background: #1d4ed8;
+        background: var(--primary-dark);
+    }
+
+    button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
     .job-card {
         background: white;
-        color: black;
-        padding: 10px;
-        margin-top: 10px;
-        border-radius: 5px;
+        color: #111827;
+        padding: 15px;
+        margin-top: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .job-card button {
         width: auto;
         margin-right: 5px;
-        padding: 5px 10px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        border-radius: 4px;
     }
 
     label {
         font-size: 0.85rem;
-        font-weight: bold;
-        color: #4b5563;
+        font-weight: 600;
+        color: #374151;
         display: block;
         margin-top: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
-    /* --- CATEGORY SEARCH RESULTS STYLES --- */
+    /* --- CATEGORY SEARCH STYLES --- */
     #categoryResults {
         background: white;
-        color: #111827; /* Force dark text since sidebar is dark */
+        color: #111827; 
         border: 1px solid #ccc;
-        border-radius: 5px;
-        max-height: 150px;
+        border-radius: 6px;
+        max-height: 180px;
         overflow-y: auto;
         display: none; 
         margin-bottom: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
 
     .category-item {
-        padding: 10px;
+        padding: 12px;
         cursor: pointer;
         border-bottom: 1px solid #eee;
         font-size: 0.9rem;
@@ -124,11 +152,14 @@
     }
     
     .selected-indicator {
-        color: #4ade80; /* Brighter green to show up on the dark sidebar */
+        color: #34d399; 
         font-size: 0.85rem;
         font-weight: bold;
         margin-bottom: 15px;
         display: none;
+        padding: 8px;
+        background: rgba(52, 211, 153, 0.1);
+        border-radius: 4px;
     }
 </style>
 </head>
@@ -139,37 +170,43 @@
 
     <div class="sidebar">
 
-        <h2>Select Category (For Job)</h2>
-        <div style="display: flex; gap: 5px; margin-top: 5px; margin-bottom: 5px;">
-            <input type="text" id="categorySearch" placeholder="Type category name..." style="margin: 0; color: black;">
-            <button onclick="searchCategory()" style="width: auto; margin: 0; padding: 8px 15px;">Search</button>
+        <h2>1. Select Category</h2>
+        <div style="display: flex; gap: 8px; margin-top: 5px; margin-bottom: 5px;">
+            <input type="text" id="categorySearch" placeholder="Search category..." style="margin: 0; color: black;">
+            <button onclick="searchCategory()" style="width: auto; margin: 0; padding: 10px 15px;">Search</button>
         </div>
         
         <div id="categoryResults"></div>
-        
         <div id="selectedCategoryMsg" class="selected-indicator">✓ Category Selected</div>
-        
         <input type="hidden" id="categoryId">
-        <h2>Create Category</h2>
-        <input type="text" id="categoryName" placeholder="Category Name" style="color: black;">
-        <button onclick="createCategory()">Create</button>
 
-        <h2>My Jobs</h2>
-        <button onclick="loadJobs()">Refresh Jobs</button>
+        <h2>2. Create Category</h2>
+        <div style="display: flex; gap: 8px;">
+            <input type="text" id="categoryName" placeholder="New Category Name" style="margin: 0; color: black;">
+            <button onclick="createCategory()" style="width: auto; margin: 0; padding: 10px 15px; background: var(--success-color);">Add</button>
+        </div>
+
+        <h2>3. Manage Jobs</h2>
+        <button onclick="loadJobs()" style="background: var(--success-color);">Refresh Job List</button>
         <div id="jobList"></div>
     </div>
 
     <div class="main">
-        <h1>Create Job</h1>
+        <h1 id="formTitle" style="margin-top: 0;">Create a New Job</h1>
+
+        <div style="background: #eff6ff; padding: 12px 15px; border-left: 4px solid var(--primary-color); border-radius: 4px; margin-bottom: 25px;">
+            <label style="margin-top: 0; color: var(--primary-dark);">Selected Category:</label>
+            <input type="text" id="mainCategoryDisplay" readonly placeholder="Search and select a category from the left sidebar 👈" style="background: transparent; border: none; font-weight: bold; color: var(--primary-color); padding: 0; font-size: 1rem; cursor: default; margin: 5px 0 0 0;">
+        </div>
 
         <label>Job Title</label>
-        <input type="text" id="title" placeholder="Job Title">
+        <input type="text" id="title" placeholder="e.g. Senior Software Engineer">
         
         <label>Description</label>
         <textarea id="description" placeholder="Full Job Description..."></textarea>
         
         <label>Location</label>
-        <input type="text" id="location" placeholder="City, State, or 'Remote'">
+        <input type="text" id="location" placeholder="e.g. New York, NY or 'Remote'">
 
         <div class="form-group">
             <div>
@@ -218,11 +255,11 @@
         <div class="form-group">
             <div>
                 <label>Min Salary</label>
-                <input type="number" step="0.01" id="salaryMin" placeholder="0.00">
+                <input type="number" step="0.01" id="salaryMin" placeholder="e.g. 50000">
             </div>
             <div>
                 <label>Max Salary</label>
-                <input type="number" step="0.01" id="salaryMax" placeholder="0.00">
+                <input type="number" step="0.01" id="salaryMax" placeholder="e.g. 80000">
             </div>
         </div>
 
@@ -234,11 +271,11 @@
 
         <div class="form-group">
             <div>
-                <label>Deadline</label>
+                <label>Application Deadline</label>
                 <input type="date" id="deadline">
             </div>
             <div>
-                <label>Vacancies</label>
+                <label>Total Vacancies</label>
                 <input type="number" id="vacancies" placeholder="1" min="1" value="1">
             </div>
             <div>
@@ -253,39 +290,45 @@
         </div>
 
         <input type="hidden" id="companyId" value="">
+        <input type="hidden" id="editJobSlug" value="">
 
-        <button onclick="createJob()" style="margin-top: 20px; padding: 15px;">Create Job</button>
+        <div id="formActions" style="margin-top: 30px; display: flex; gap: 15px;">
+            <button id="btnCreate" onclick="createJob()" style="padding: 15px; flex: 1; font-size: 1.1rem;">Create Job</button>
+            <button id="btnUpdate" onclick="submitUpdateJob()" style="padding: 15px; flex: 1; display: none; background: var(--success-color); font-size: 1.1rem;">Save Changes</button>
+            <button id="btnCancel" onclick="cancelEdit()" style="padding: 15px; flex: 1; display: none; background: var(--danger-color); font-size: 1.1rem;">Cancel Edit</button>
+        </div>
 
     </div>
-
 </div>
 
 <script>
+// --- CONFIGURATION ---
 const BASE_URL = "http://127.0.0.1:8000";
-const TOKEN = "YOUR_ACCESS_TOKEN"; // 🔴 replace this
+const TOKEN = "YOUR_ACCESS_TOKEN"; // 🔴 Inject your actual JWT token here
 
 // Helper to safely parse comma-separated lists into arrays
 const parseArray = (str) => str.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
-// --- CATEGORY SEARCH LOGIC ---
-// Add these variables outside the function to track state
+// Global State Variables
 let currentCategoryPage = 1;
 let currentCategoryQuery = "";
+let allLoadedJobs = []; 
 
+// Execute on load
+document.addEventListener('DOMContentLoaded', () => {
+    loadJobs();
+});
+
+// --- 1. CATEGORY LOGIC ---
 async function searchCategory(page = 1) {
     const queryInput = document.getElementById("categorySearch").value.trim();
     const resultsContainer = document.getElementById("categoryResults");
-
-    // Hide previous selection indicator if they are making a NEW search
-    document.getElementById("selectedCategoryMsg").style.display = "none";
-    document.getElementById("categoryId").value = ""; 
 
     if (queryInput.length === 0) {
         alert("Please enter a category name to search.");
         return;
     }
 
-    // If this is a brand new search (not a pagination click), reset to page 1
     if (page === 1) {
         currentCategoryQuery = queryInput;
         currentCategoryPage = 1;
@@ -294,43 +337,33 @@ async function searchCategory(page = 1) {
     }
 
     try {
-        // Fetch from Django Backend - Fixed the page query parameter!
         const res = await fetch(`${BASE_URL}/jobs/categories/search/?q=${currentCategoryQuery}&page=${currentCategoryPage}`, {
-            headers: {
-                "Authorization": `Bearer ${TOKEN}`
-            }
+            headers: { "Authorization": `Bearer ${TOKEN}` }
         });
 
         const data = await res.json();
         resultsContainer.innerHTML = "";
 
-        // Safely extract items whether DRF wraps them in pagination metadata or not
         let items = [];
         let hasNextPage = false;
-        let hasPrevPage = false;
-
+        
         if (data.results && Array.isArray(data.results)) {
-            // Unpaginated flat list
             items = data.results;
         } else if (data.results && data.results.results) {
-            // Standard DRF Pagination format: { count, next, previous, results: { ... } }
             items = data.results.results;
             hasNextPage = data.next !== null;
-            hasPrevPage = data.previous !== null;
         }
 
         if (items.length > 0) {
-            // 1. Loop through and add the category items
             items.forEach(cat => {
                 const div = document.createElement("div");
                 div.className = "category-item";
                 div.textContent = `${cat.name} (${cat.slug})`;
-                
                 div.onclick = () => selectCategory(cat.category_id, cat.name);
                 resultsContainer.appendChild(div);
             });
 
-            // 2. Build the Pagination Controls UI
+            // Pagination Controls
             const paginationDiv = document.createElement("div");
             paginationDiv.style.display = "flex";
             paginationDiv.style.justifyContent = "space-between";
@@ -339,7 +372,6 @@ async function searchCategory(page = 1) {
             paginationDiv.style.borderTop = "1px solid #ccc";
             paginationDiv.style.background = "#f9fafb";
 
-            // PREV BUTTON
             const prevBtn = document.createElement("button");
             prevBtn.textContent = "« Prev";
             prevBtn.style.width = "auto";
@@ -349,33 +381,24 @@ async function searchCategory(page = 1) {
                 prevBtn.onclick = () => searchCategory(currentCategoryPage - 1);
             } else {
                 prevBtn.disabled = true;
-                prevBtn.style.opacity = "0.5";
-                prevBtn.style.cursor = "not-allowed";
             }
 
-            // PAGE INDICATOR
             const pageInfo = document.createElement("span");
             pageInfo.textContent = `Page ${currentCategoryPage}`;
             pageInfo.style.fontSize = "0.85rem";
-            pageInfo.style.color = "#444";
             pageInfo.style.fontWeight = "bold";
 
-            // NEXT BUTTON
             const nextBtn = document.createElement("button");
             nextBtn.textContent = "Next »";
             nextBtn.style.width = "auto";
             nextBtn.style.margin = "0";
             nextBtn.style.padding = "5px 10px";
-            // Disable if we got less than 10 items (meaning it's the last page)
             if (items.length === 10 || hasNextPage) {
                 nextBtn.onclick = () => searchCategory(currentCategoryPage + 1);
             } else {
                 nextBtn.disabled = true;
-                nextBtn.style.opacity = "0.5";
-                nextBtn.style.cursor = "not-allowed";
             }
 
-            // Append controls
             paginationDiv.appendChild(prevBtn);
             paginationDiv.appendChild(pageInfo);
             paginationDiv.appendChild(nextBtn);
@@ -383,33 +406,27 @@ async function searchCategory(page = 1) {
 
             resultsContainer.style.display = "block"; 
         } else {
-            resultsContainer.innerHTML = "<div style='padding: 10px; color: #888;'>No categories found. Try a different search.</div>";
+            resultsContainer.innerHTML = "<div style='padding: 10px; color: #888;'>No categories found.</div>";
             resultsContainer.style.display = "block";
         }
     } catch (error) {
-        console.error("Failed to search categories:", error);
+        console.error("Search error:", error);
         alert("Server error while searching categories.");
     }
 }
 
 function selectCategory(id, name) {
-    // 1. Set the hidden ID that createJob() will use
     document.getElementById("categoryId").value = id;      
-    
-    // 2. Put the selected name in the input box so the user sees it
     document.getElementById("categorySearch").value = name;  
-    
-    // 3. Hide the results dropdown
     document.getElementById("categoryResults").style.display = "none"; 
-    
-    // 4. Show a green checkmark message
     document.getElementById("selectedCategoryMsg").style.display = "block";
+    
+    // Sync the main form display
+    document.getElementById("mainCategoryDisplay").value = name;
 }
-// ------------------------------------
 
-// CREATE CATEGORY
 async function createCategory() {
-    const name = document.getElementById("categoryName").value;
+    const name = document.getElementById("categoryName").value.trim();
     if (!name) return alert("Category name is required");
 
     const res = await fetch(`${BASE_URL}/jobs/categories/create/`, {
@@ -423,37 +440,140 @@ async function createCategory() {
 
     const data = await res.json();
     alert(data.message || JSON.stringify(data));
+    document.getElementById("categoryName").value = ""; // clear input
 }
 
-// LOAD JOBS
+// --- 2. JOB CRUD LOGIC ---
 async function loadJobs() {
-    const res = await fetch(`${BASE_URL}/jobs/create/`, { 
-        headers: {
-            "Authorization": `Bearer ${TOKEN}`
-        }
-    });
-
-    const data = await res.json();
     const container = document.getElementById("jobList");
-    container.innerHTML = "";
+    container.innerHTML = "<div style='text-align:center; color:#ccc; margin-top:20px;'>Loading...</div>";
 
-    if (data.data) {
-        data.data.forEach(job => {
-            const div = document.createElement("div");
-            div.className = "job-card";
-
-            div.innerHTML = `
-                <b>${job.title}</b><br>
-                Status: ${job.status}<br>
-                <small>${job.title_slug}</small><br>
-
-                <button onclick="updateJob('${job.title_slug}')">Set Open</button>
-                <button onclick="deleteJob('${job.title_slug}')">Delete</button>
-            `;
-
-            container.appendChild(div);
+    try {
+        const res = await fetch(`${BASE_URL}/jobs/create/`, { 
+            headers: { "Authorization": `Bearer ${TOKEN}` }
         });
+
+        const data = await res.json();
+        container.innerHTML = "";
+        allLoadedJobs = []; 
+
+        if (data.data && data.data.length > 0) {
+            allLoadedJobs = data.data; 
+
+            data.data.forEach(job => {
+                const div = document.createElement("div");
+                div.className = "job-card";
+
+                let dateDisplay = job.created_at ? new Date(job.created_at).toLocaleDateString() : "";
+                let statusColor = job.status === 'OPEN' ? 'var(--success-color)' : (job.status === 'CLOSED' ? 'var(--danger-color)' : 'var(--warning-color)');
+
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <b style="font-size:1.05rem;">${job.title}</b>
+                        <span style="font-size:0.75rem; color:#888;">${dateDisplay}</span>
+                    </div>
+                    <div style="margin-top:8px; font-size:0.9rem;">
+                        Status: <strong style="color:${statusColor}">${job.status}</strong><br>
+                        <small style="color:#6b7280; font-family:monospace;">ID: ${job.title_slug}</small>
+                    </div>
+
+                    <div style="margin-top: 15px; display:flex; flex-wrap:wrap; gap:8px;">
+                        <button onclick="startEditing('${job.title_slug}')" style="background: var(--primary-color);">Edit</button>
+                        ${job.status !== 'OPEN' ? `<button onclick="updateJob('${job.title_slug}')" style="background: var(--success-color);">Set Open</button>` : ''}
+                        <button onclick="deleteJob('${job.title_slug}')" style="background: var(--danger-color);">Delete</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        } else {
+            container.innerHTML = "<div style='text-align:center; color:#ccc; margin-top:20px;'>No jobs found. Create one!</div>";
+        }
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = "<div style='color:red;'>Failed to load jobs.</div>";
     }
+}
+
+// 🌟 PREPARE FORM FOR EDITING
+// 🌟 PREPARE FORM FOR EDITING
+function startEditing(slug) {
+    const job = allLoadedJobs.find(j => j.title_slug === slug);
+    if (!job) return alert("Job details not found!");
+
+    document.getElementById("formTitle").textContent = `Editing: ${job.title}`;
+    document.getElementById("editJobSlug").value = job.title_slug;
+    
+    document.getElementById("title").value = job.title || "";
+    document.getElementById("description").value = job.description || "";
+    document.getElementById("location").value = job.location || "";
+    document.getElementById("workType").value = job.work_type || "FULL_TIME";
+    document.getElementById("workMode").value = job.work_mode || "ONSITE";
+    document.getElementById("employmentType").value = job.employment_type || "PERMANENT";
+    document.getElementById("experienceLevel").value = job.experience_level || "MID";
+    document.getElementById("experience").value = job.years_of_experience || 0;
+    document.getElementById("salaryMin").value = job.salary_min || "";
+    document.getElementById("salaryMax").value = job.salary_max || "";
+    document.getElementById("vacancies").value = job.vacancies || 1;
+    document.getElementById("status").value = job.status || "DRAFT";
+    
+    // 🌟 THE FIX: Prepopulate main form, but keep sidebar search clean
+    if (job.category) {
+        const catName = job.category_name || "Existing Category";
+        
+        // 1. Save the ID for the backend
+        document.getElementById("categoryId").value = job.category;
+        
+        // 2. Show the name in the main blue box
+        document.getElementById("mainCategoryDisplay").value = catName; 
+        
+        // 3. Keep the sidebar search completely empty
+        document.getElementById("categorySearch").value = "";
+        document.getElementById("selectedCategoryMsg").style.display = "none";
+    } else {
+        document.getElementById("categoryId").value = "";
+        document.getElementById("mainCategoryDisplay").value = ""; 
+        document.getElementById("categorySearch").value = "";
+        document.getElementById("selectedCategoryMsg").style.display = "none";
+    }
+
+    if (job.deadline) {
+        document.getElementById("deadline").value = job.deadline.split('T')[0]; 
+    } else {
+        document.getElementById("deadline").value = "";
+    }
+
+    document.getElementById("skills").value = (job.skills_required || []).join(", ");
+    document.getElementById("tags").value = (job.tags || []).join(", ");
+
+    // Toggle Buttons
+    document.getElementById("btnCreate").style.display = "none";
+    document.getElementById("btnUpdate").style.display = "block";
+    document.getElementById("btnCancel").style.display = "block";
+    
+    // Scroll to the top
+    document.querySelector('.main').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// 🌟 CANCEL EDITING
+function cancelEdit() {
+    document.getElementById("formTitle").textContent = "Create a New Job";
+    document.getElementById("editJobSlug").value = "";
+    
+    // Clear standard inputs
+    document.querySelectorAll('.main input[type="text"]:not(#mainCategoryDisplay), .main input[type="number"], .main input[type="date"], .main textarea').forEach(input => {
+        input.value = "";
+    });
+    
+    // Reset category
+    document.getElementById("categoryId").value = "";
+    document.getElementById("categorySearch").value = "";
+    document.getElementById("mainCategoryDisplay").value = ""; 
+    document.getElementById("selectedCategoryMsg").style.display = "none";
+    
+    // Reset buttons
+    document.getElementById("btnCreate").style.display = "block";
+    document.getElementById("btnUpdate").style.display = "none";
+    document.getElementById("btnCancel").style.display = "none";
 }
 
 // CREATE JOB
@@ -461,11 +581,8 @@ async function createJob() {
     const deadlineVal = document.getElementById("deadline").value;
     const salaryMin = parseFloat(document.getElementById("salaryMin").value);
     const salaryMax = parseFloat(document.getElementById("salaryMax").value);
-    
-    // Retrieve the categoryId set by our selectCategory function
     const categoryId = parseInt(document.getElementById("categoryId").value);
 
-    // Validate that a category was searched and selected
     if (isNaN(categoryId)) {
         return alert("Please search for and select a Category in the left sidebar before creating a job.");
     }
@@ -474,73 +591,150 @@ async function createJob() {
         title: document.getElementById("title").value,
         description: document.getElementById("description").value,
         location: document.getElementById("location").value,
-        
         work_type: document.getElementById("workType").value,
         work_mode: document.getElementById("workMode").value,
         employment_type: document.getElementById("employmentType").value,
         experience_level: document.getElementById("experienceLevel").value,
         status: document.getElementById("status").value,
-        
         years_of_experience: parseInt(document.getElementById("experience").value) || 0,
         vacancies: parseInt(document.getElementById("vacancies").value) || 1,
         salary_min: isNaN(salaryMin) ? null : salaryMin,
         salary_max: isNaN(salaryMax) ? null : salaryMax,
-        
         category: categoryId,
-        // 🔴 REMOVED: 'company' field is gone! The backend handles it securely now.
-        
         skills_required: parseArray(document.getElementById("skills").value),
         tags: parseArray(document.getElementById("tags").value),
-        
         ...(deadlineVal && { deadline: deadlineVal })
     };
 
-    const res = await fetch(`${BASE_URL}/jobs/create/`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${TOKEN}`
-        },
-        body: JSON.stringify(payload)
-    });
+    try {
+        const res = await fetch(`${BASE_URL}/jobs/create/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${TOKEN}`
+            },
+            body: JSON.stringify(payload)
+        });
 
-    const data = await res.json();
-    if(res.ok) {
-        alert("Job Created Successfully");
-        loadJobs(); 
-    } else {
-        alert("Error: " + JSON.stringify(data));
+        const data = await res.json();
+        if(res.ok) {
+            alert("Job Created Successfully!");
+            cancelEdit(); // Clears everything cleanly
+            loadJobs(); 
+        } else {
+            alert("Error: " + JSON.stringify(data));
+        }
+    } catch (err) {
+        console.error(err);
+        alert("A network error occurred.");
     }
 }
 
-// UPDATE JOB 
-async function updateJob(slug) {
-    const res = await fetch(`${BASE_URL}/jobs/update/?title_slug=${slug}`, {
-        method: "PATCH",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${TOKEN}`
-        },
-        body: JSON.stringify({ status: "OPEN" })
-    });
+// 🌟 SUBMIT UPDATE
+async function submitUpdateJob() {
+    const slug = document.getElementById("editJobSlug").value;
+    if (!slug) return alert("No job selected for editing.");
 
-    const data = await res.json();
-    alert(data.message || "Updated");
-    loadJobs();
+    const deadlineVal = document.getElementById("deadline").value;
+    const salaryMin = parseFloat(document.getElementById("salaryMin").value);
+    const salaryMax = parseFloat(document.getElementById("salaryMax").value);
+    const categoryId = parseInt(document.getElementById("categoryId").value);
+    
+    const payload = {
+        title: document.getElementById("title").value,
+        description: document.getElementById("description").value,
+        location: document.getElementById("location").value,
+        work_type: document.getElementById("workType").value,
+        work_mode: document.getElementById("workMode").value,
+        employment_type: document.getElementById("employmentType").value,
+        experience_level: document.getElementById("experienceLevel").value,
+        status: document.getElementById("status").value,
+        years_of_experience: parseInt(document.getElementById("experience").value) || 0,
+        vacancies: parseInt(document.getElementById("vacancies").value) || 1,
+        salary_min: isNaN(salaryMin) ? null : salaryMin,
+        salary_max: isNaN(salaryMax) ? null : salaryMax,
+        skills_required: parseArray(document.getElementById("skills").value),
+        tags: parseArray(document.getElementById("tags").value),
+        ...(deadlineVal && { deadline: deadlineVal })
+    };
+    
+    if (!isNaN(categoryId)) {
+        payload.category = categoryId;
+    }
+
+    try {
+        const res = await fetch(`${BASE_URL}/jobs/update/?title_slug=${slug}`, {
+            method: "PATCH", 
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${TOKEN}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if(res.ok) {
+            alert("Job Updated Successfully!");
+            cancelEdit(); 
+            loadJobs();   
+        } else {
+            alert("Error: " + JSON.stringify(data));
+        }
+    } catch (err) {
+        console.error(err);
+        alert("A network error occurred while updating.");
+    }
+}
+
+// QUICK SET OPEN
+async function updateJob(slug) {
+    if(!confirm("Set this job's status to OPEN?")) return;
+    
+    try {
+        const res = await fetch(`${BASE_URL}/jobs/update/?title_slug=${slug}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${TOKEN}`
+            },
+            body: JSON.stringify({ status: "OPEN" })
+        });
+
+        if(res.ok) {
+            loadJobs();
+        } else {
+            const data = await res.json();
+            alert("Error: " + (data.error || JSON.stringify(data)));
+        }
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 // DELETE JOB
 async function deleteJob(slug) {
-    const res = await fetch(`${BASE_URL}/jobs/update/?title_slug=${slug}`, {
-        method: "DELETE",
-        headers: {
-            "Authorization": `Bearer ${TOKEN}`
-        }
-    });
+    if(!confirm("Are you sure you want to permanently delete this job?")) return;
 
-    const data = await res.json();
-    alert(data.message || "Deleted");
-    loadJobs();
+    try {
+        const res = await fetch(`${BASE_URL}/jobs/update/?title_slug=${slug}`, {
+            method: "DELETE",
+            headers: {
+                "Authorization": `Bearer ${TOKEN}`
+            }
+        });
+
+        if(res.ok) {
+            if (document.getElementById("editJobSlug").value === slug) {
+                cancelEdit();
+            }
+            loadJobs();
+        } else {
+            const data = await res.json();
+            alert("Error: " + JSON.stringify(data));
+        }
+    } catch (err) {
+        console.error(err);
+    }
 }
 </script>
 

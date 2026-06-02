@@ -347,13 +347,13 @@
         
         if (hasManualFilters) {
             // If they are actively filtering, hit the SEARCH API
-            endpointPath = '/applyForjob/search/';
+            endpointPath = '/applyForjob/job_search/';
         } else if (matchSkills) {
             // If filters are blank and Match Skills is ON, hit the SUGGESTED API
             endpointPath = '/applyForjob/suggested/';
         } else {
             // If filters are blank and Match Skills is OFF, hit the SEARCH API to show everything
-            endpointPath = '/applyForjob/search/';
+            endpointPath = '/applyForjob/job_search/';
         }
 
         const url = new URL(endpointPath, BASE_URL);
@@ -362,7 +362,7 @@
         if (sort) url.searchParams.append('ordering', sort);
 
         // Only append specific filter params if they are using the Search endpoint
-        if (endpointPath === '/applyForjob/search/') {
+        if (endpointPath === '/applyForjob/job_search/') {
             if (search) url.searchParams.append('search', search);
             if (location) url.searchParams.append('company__location', location);
             if (category) url.searchParams.append('category__name', category);

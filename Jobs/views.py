@@ -433,7 +433,7 @@ class JobRetrieveUpdateDeleteAPIView(BaseAPIView):
             logger.info(f"[JobRetrieveUpdateDeleteAPIView Helper] Running filter locate pipeline for title_slug='{title_slug}' | user={user.user_id}")
             return await Job.objects.select_related("category", "recruiter").filter(
                 title_slug=title_slug, 
-                recruiter__user=user # Aligned field lookup constraints with recruiter profiles
+                recruiter=user # Aligned field lookup constraints with recruiter profiles
             ).afirst()
         except Exception as e:
             logger.exception(f"[JobRetrieveUpdateDeleteAPIView Helper] Error mapping lookups via parameters: {str(e)}")
@@ -460,7 +460,7 @@ class JobRetrieveUpdateDeleteAPIView(BaseAPIView):
                 )
 
             queryset = Job.objects.select_related("category", "recruiter").filter(
-                recruiter__user=request.user
+                recruiter=request.user
             ).order_by("-created_at")
 
             data = []

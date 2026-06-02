@@ -110,11 +110,13 @@ class ApplyForJobAPIView(APIView):
 
     @transaction.atomic 
     def post(self, request, job_id):
+        print(f"--- APPLY VIEW TRIGGERED FOR JOB ID: {job_id} ---")
+        print(f"User making request: {request.user}")
         # 1. Fetch user profile cleanly
         profile = JobSeekerProfile.objects.filter(user=request.user).first()
-        
+        print(f"Fetched profile: {profile}")
         if not profile:
-            logger.warning(f"Application blocked: User {request.user.id} has no completed profile.")
+            logger.warning(f"Application blocked: User {request.user.user_id} has no completed profile.")
             return Response(
                 {"error": "You must complete your job seeker profile before applying."}, 
                 status=status.HTTP_403_FORBIDDEN 
@@ -122,30 +124,32 @@ class ApplyForJobAPIView(APIView):
 
         # 2. Fetch the job, ensuring it is actually open for applications
         # Ensure 'job_id' here matches your primary key field (e.g., if you named it 'job_id' in models.py)
-        job = get_object_or_404(Job.objects.filter(status='open'), pk=job_id) 
-
-        # 3. Prevent duplicate applications
-        if Application.objects.filter(jobseeker=profile, job=job).exists():
+        print(f"Attempting to fetch Job with ID: {job_id} and status 'OPEN'")
+        try:
+            # Notice we use 'OPEN' in uppercase to match your database!
+            job = Job.objects.get(job_id=job_id, status='OPEN')
+            print(f"Fetched job: {job}")
+        except Job.DoesNotExist:
             return Response(
-                {"error": "You have already applied for this position."}, 
+                {"error": "This job does not exist or is no longer accepting applications."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        # 3. Prevent duplicate applications
+        already_applied = Application.objects.filter(job=job, jobseeker=profile).exists()
+        if already_applied:
+            return Response(
+                {"error": "You have already applied for this job."}, 
                 status=status.HTTP_409_CONFLICT
             )
-
-        # 4. Process and save
-        serializer = ApplicationSerializer(data=request.data)
+            
+        # 4. Create the application
+        Application.objects.create(
+            job=job,
+            jobseeker=profile,
+            status='APPLIED' 
+        )
         
-        # Automatically returns a 400 response with the errors if validation fails
-        serializer.is_valid(raise_exception=True) 
-        
-        # Save the application with secure system-level assignments
-        serializer.save(jobseeker=profile, job=job)
-        
-        logger.info(f"Application successful: User {request.user.user_id} applied for Job {job.pk}")
         return Response(
-            {
-                "success": True,
-                "message": "Application submitted successfully!",
-                "data": serializer.data
-            }, 
+            {"message": "Your application was submitted successfully!"}, 
             status=status.HTTP_201_CREATED
         )

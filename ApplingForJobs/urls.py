@@ -5,11 +5,11 @@ app_name = 'ApplingForJobs'
 
 urlpatterns = [
     # ... your existing urls ...
-    path('search/', JobSearchUIView.as_view(), name='job-search-ui'),
+    path("search/", JobSearchUIView.as_view(), name='job-search-ui'),
     # Jobseeker API Endpoints
     path("suggested/", SuggestedJobsAPIView.as_view(), name="suggested-jobs"),
     
     # Hit this endpoint when the user clicks the "Search" button
-    path("search/", FilterJobsAPIView.as_view(), name="filter-jobs"),
-    path('<int:job_id>/apply/', ApplyForJobAPIView.as_view(), name='api-job-apply'),
+    path("job_search/", FilterJobsAPIView.as_view(), name="filter-jobs"),
+    path("<int:job_id>/apply/", ApplyForJobAPIView.as_view(), name='api-job-apply'),
 ]
