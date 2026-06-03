@@ -1,5 +1,6 @@
 import logging
 from asgiref.sync import sync_to_async
+from django.shortcuts import render
 from django.utils import timezone
 from django.db import DatabaseError
 
@@ -24,18 +25,21 @@ def get_single_serializer_data(serializer):
     """Extracts structural payload dictionaries from an instantiated serializer."""
     return serializer.data
 
+def notification_page_view(request):
+    return render(request, 'notification.html')
+
 class NotificationListView(APIView):
     permission_classes = [IsAuthenticated]
 
     async def get(self, request):
         try:
-            logger.info(f"[NotificationListView GET] Fetching notifications index for user={request.user.id}")
+            logger.info(f"[NotificationListView GET] Fetching notifications index for user={request.user.user_id}")
 
             queryset = Notification.objects.filter(recipient=request.user).order_by('is_read', '-created_at')
 
             serialized_data = await get_serialized_data(NotificationListSerializer, queryset, many=True)
 
-            logger.info(f"[NotificationListView GET] Dataset parsed successfully for user={request.user.id}")
+            logger.info(f"[NotificationListView GET] Dataset parsed successfully for user={request.user.user_id}")
             return Response({
                 "success": True,
                 "data": serialized_data
@@ -58,7 +62,7 @@ class NotificationUnreadCountView(APIView):
 
     async def get(self, request):
         try:
-            logger.info(f"[NotificationUnreadCountView GET] Computing unread balance for user={request.user.id}")
+            logger.info(f"[NotificationUnreadCountView GET] Computing unread balance for user={request.user.user_id}")
 
             unread_count = await Notification.objects.filter(recipient=request.user, is_read=False).acount()
 
@@ -81,7 +85,7 @@ class MarkNotificationReadView(APIView):
 
     async def patch(self, request, pk):
         try:
-            logger.info(f"[MarkNotificationReadView PATCH] Attempting state mutation on notification_id={pk} | user={request.user.id}")
+            logger.info(f"[MarkNotificationReadView PATCH] Attempting state mutation on notification_id={pk} | user={request.user.user_id}")
             
             notification = await Notification.objects.aget(pk=pk, recipient=request.user)
 

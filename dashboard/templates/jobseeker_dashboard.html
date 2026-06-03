@@ -50,6 +50,7 @@
         font-size: 1.85rem; 
         font-weight: 800; 
         color: var(--neutral-900); 
+        margin: 0;
     }
     
     .header-content p { 
@@ -76,6 +77,46 @@
     .btn-primary:hover { 
         background-color: var(--primary-dark); 
         transform: translateY(-2px); 
+    }
+
+    /* --- Notification Bell Styles --- */
+    .notification-bell {
+        position: relative;
+        background: white;
+        border: 1px solid var(--neutral-200);
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    .notification-bell:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        border-color: var(--primary-light);
+    }
+    
+    .bell-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: var(--danger-color);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: bold;
+        min-width: 20px;
+        height: 20px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid white;
+        box-sizing: border-box;
     }
     
     .stats-grid { 
@@ -293,7 +334,13 @@
             <h1>Welcome! 👋</h1>
             <p>You've applied to <strong id="total-applied">0</strong> positions. Keep pushing towards your dream job!</p>
         </div>
-        <div class="header-actions">
+        <div class="header-actions" style="display: flex; align-items: center; gap: 1rem;">
+            
+            <button onclick="secureNavigate('/notification/inbox/')" class="notification-bell" title="View Notifications">
+                <span style="font-size: 1.3rem;">🔔</span>
+                <span class="bell-badge" id="dashboard-unread-badge" style="display: none;">0</span>
+            </button>
+
             <a href="javascript:void(0)" data-url="{% url 'ApplingForJobs:job-search-ui' %}" onclick="secureNavigate(this.dataset.url)" class="btn-primary">🔍 Browse Jobs</a>
         </div>
     </header>
@@ -304,7 +351,6 @@
                 <h3>Profile Completion</h3>
                 <p>Complete your profile to increase your chances of getting hired</p>
             </div>
-            <!-- <a href="" style="color: var(--primary-color); font-weight: 600; text-decoration: none;">Edit →</a> -->
             <a href="{% url 'jobseeker:jobseeker-profile-interface' %}" style="color: var(--primary-color); font-weight: 600; text-decoration: none;">Profile →</a>
         </div>
         <div class="progress-track">
@@ -348,6 +394,7 @@
             <div style="display: flex; gap: 0.5rem;">
                 <button class="btn-action" onclick="secureNavigate('{% url 'applications:job-apply' %}')" style="background: var(--neutral-100); color: var(--neutral-700); cursor: pointer;">View All</button>
             </div>
+        </div>
         <table class="table">
             <thead>
                 <tr>
@@ -371,16 +418,12 @@
 </div>
 
 <script>
-
+    // Navigation wrapper to verify token before changing pages
     async function secureNavigate(targetUrl) {
-    // 1. authFetch will check the token and perform a silent refresh if needed
         const response = await window.authFetch('/users/details/');
-
         if (response && response.ok) {
-            // 2. If the user is authenticated, move to the page
             window.location.href = targetUrl;
         } else {
-            // authFetch handles the redirect to /users/login/ if unauthorized
             console.warn("Unauthorized access attempt.");
         }
     }
@@ -391,37 +434,54 @@
     }
 
     function formatDate(dateString) {
+        if (!dateString) return 'N/A';
         const options = { year: 'numeric', month: 'short', day: 'numeric' };
         return new Date(dateString).toLocaleDateString('en-US', options);
     }
 
+    // --- Core Dashboard Fetch ---
     function loadDashboardData() {
-    // We use authFetch instead of fetch. 
-    // It automatically pulls 'access_token' and adds the 'Bearer' header.
-    window.authFetch('/dashboard/jobseeker/data/')
-        .then(response => {
-            // authFetch returns null if the user isn't logged in/refresh fails
-            if (!response) return; 
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    showError('Session expired. Please log in again.');
+        window.authFetch('/dashboard/jobseeker/data/')
+            .then(response => {
+                if (!response) return; 
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showError('Session expired. Please log in again.');
+                    }
+                    throw new Error('HTTP error! status: ' + response.status);
                 }
-                throw new Error('HTTP error! status: ' + response.status);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data) {
-                populateDashboard(data);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showError('Failed to load dashboard data. Please refresh.');
-        });
+                return response.json();
+            })
+            .then(data => {
+                if (data) populateDashboard(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Optionally show error to user
+            });
     }
 
+    // --- Fetch Unread Notifications Count ---
+    async function fetchUnreadCount() {
+        try {
+            const response = await window.authFetch('/notification/unread-count/');
+            if (response && response.ok) {
+                const data = await response.json();
+                const badge = document.getElementById('dashboard-unread-badge');
+                
+                if (data.success && data.unread_count > 0) {
+                    badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load unread count:', error);
+        }
+    }
+
+    // --- Populate UI Logic ---
     function populateDashboard(data) {
         if (data.user) {
             document.querySelector('.header-content h1').textContent = 'Welcome, ' + escapeHtml(data.user) + '! 👋';
@@ -450,7 +510,6 @@
         if (!tbody) return;
         
         if (applications.length === 0) {
-            // FIX 1: Updated the empty state button to use your secure navigation and Django URL
             tbody.innerHTML = `
                 <tr>
                     <td colspan="5" style="text-align: center; padding: 4rem 2rem;">
@@ -495,14 +554,33 @@
 
     function showError(message) {
         const errorDiv = document.createElement('div');
-        errorDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #fee2e2; color: #dc2626; padding: 1rem; border-radius: 8px; z-index: 1000;';
+        errorDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #fee2e2; color: #dc2626; padding: 1rem; border-radius: 8px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
         errorDiv.textContent = message;
         document.body.appendChild(errorDiv);
         setTimeout(() => errorDiv.remove(), 5000);
     }
 
-    document.addEventListener('DOMContentLoaded', loadDashboardData);
-    setInterval(loadDashboardData, 30000);
+    // --- Initialization & Polling ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Safe polling to wait for global authFetch/accessToken to be ready
+        const checkAuthAndLoad = () => {
+            if (window.authFetch !== undefined) {
+                loadDashboardData();
+                fetchUnreadCount();
+            } else {
+                setTimeout(checkAuthAndLoad, 50);
+            }
+        };
+        checkAuthAndLoad();
+    });
+
+    // Refresh dashboard stats and notification count every 30 seconds
+    setInterval(() => {
+        if (window.authFetch !== undefined) {
+            loadDashboardData();
+            fetchUnreadCount(); 
+        }
+    }, 30000);
 </script>
 
 {% endblock %}

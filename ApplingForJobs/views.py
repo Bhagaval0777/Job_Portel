@@ -1,28 +1,24 @@
 import logging
-from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Q
-from rest_framework import generics
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import render
 from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.permissions import AllowAny
 
-# Custom Authentication
+from asgiref.sync import async_to_sync
+from notification.helpers import notify_user
+
 from Users.authentication import CustomJWTAuthentication
 
-# Models
 from jobseeker.models import JobSeekerProfile
 from Jobs.models import Job
 from JobApplicationManagement.models import Application
 
-# Serializers
-from JobApplicationManagement.serializers import ApplicationSerializer
 from Jobs.serializers import JobListSerializer
 
 logger = logging.getLogger(__name__)
@@ -41,38 +37,24 @@ class SuggestedJobsAPIView(generics.ListAPIView):
     serializer_class = JobListSerializer 
     authentication_classes = [CustomJWTAuthentication]
     permission_classes = [IsAuthenticated]
-    
-    # Optional: You can still order them by newest first
     ordering = ['-created_at']
 
     def get_queryset(self):
-        # 1. Start with all open jobs
         queryset = Job.objects.filter(status='OPEN').select_related('category', 'company')
-        print(queryset)
         try:
-            # 2. Get the logged-in user's skills as a flat list of strings
-            # This looks at the 'skill_name' field on your Skill model
             skills_queryset = self.request.user.jobseeker_profile.skills.values_list('skill_name', flat=True)
-            
-            # Convert the queryset to a standard Python list
             user_skills = list(skills_queryset)
             
             if user_skills and len(user_skills) > 0:
-                # 3. Create an empty OR query
                 skill_query = Q()
-                
-                # 4. If ANY single skill matches, the job will be included
                 for skill in user_skills:
                     skill_query |= Q(skills_required__icontains=skill.strip())
                 
-                # Apply the filter and remove duplicate jobs just in case multiple skills matched
                 return queryset.filter(skill_query).distinct()
                 
         except (AttributeError, ObjectDoesNotExist):
-            # Catch ObjectDoesNotExist just in case a user exists but hasn't created a JobSeekerProfile yet
             pass
             
-        # 5. If the user has no skills or no profile, return an empty queryset
         return Job.objects.none()
     
 class FilterJobsAPIView(generics.ListAPIView):
@@ -83,57 +65,46 @@ class FilterJobsAPIView(generics.ListAPIView):
     authentication_classes = [CustomJWTAuthentication]
     permission_classes = [IsAuthenticated]
     
-    # 1. Enable standard DRF filtering tools
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-
-    # 2. EXACT match filters (e.g., dropdowns or exact strings)
     filterset_fields = ['category__name', 'company__location', 'work_type']
-
-    # 3. KEYWORD search (e.g., typing in a search bar)
     search_fields = ['title', 'description', 'company__name']
-
-    # 4. Sorting capabilities
     ordering_fields = ['created_at', 'salary_min', 'salary_max']
     ordering = ['-created_at'] 
 
     def get_queryset(self):
-        # Just return all open jobs. The filter_backends will automatically 
-        # slice this down based on what the user passes in the URL.
         return Job.objects.filter(status='OPEN').select_related('category', 'company')
+
 
 class ApplyForJobAPIView(APIView):
     """
-    Optimized endpoint to apply for a specific job with transaction safety.
+    Optimized endpoint to apply for a specific job with transaction safety and real-time triggers.
     """
     authentication_classes = [CustomJWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic 
     def post(self, request, job_id):
-        print(f"--- APPLY VIEW TRIGGERED FOR JOB ID: {job_id} ---")
-        print(f"User making request: {request.user}")
+        logger.info(f"--- APPLY VIEW TRIGGERED FOR JOB ID: {job_id} ---")
+        
         # 1. Fetch user profile cleanly
         profile = JobSeekerProfile.objects.filter(user=request.user).first()
-        print(f"Fetched profile: {profile}")
         if not profile:
-            logger.warning(f"Application blocked: User {request.user.user_id} has no completed profile.")
+            logger.warning(f"Application blocked: User {request.user.id} has no completed profile.")
             return Response(
                 {"error": "You must complete your job seeker profile before applying."}, 
                 status=status.HTTP_403_FORBIDDEN 
             )
 
         # 2. Fetch the job, ensuring it is actually open for applications
-        # Ensure 'job_id' here matches your primary key field (e.g., if you named it 'job_id' in models.py)
-        print(f"Attempting to fetch Job with ID: {job_id} and status 'OPEN'")
         try:
-            # Notice we use 'OPEN' in uppercase to match your database!
-            job = Job.objects.get(job_id=job_id, status='OPEN')
-            print(f"Fetched job: {job}")
+            # select_related recruiter so we have the user instance for notifications without extra queries
+            job = Job.objects.select_related('recruiter').get(job_id=job_id, status='OPEN')
         except Job.DoesNotExist:
             return Response(
                 {"error": "This job does not exist or is no longer accepting applications."}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+
         # 3. Prevent duplicate applications
         already_applied = Application.objects.filter(job=job, jobseeker=profile).exists()
         if already_applied:
@@ -142,13 +113,46 @@ class ApplyForJobAPIView(APIView):
                 status=status.HTTP_409_CONFLICT
             )
             
-        # 4. Create the application
-        Application.objects.create(
+        # 4. Create the application row entry inside our database transaction block
+        application = Application.objects.create(
             job=job,
             jobseeker=profile,
             status='APPLIED' 
         )
         
+        # 5. 🌟 REAL-TIME NOTIFICATION TRIGGERS
+        # Since this view is synchronous (`def post`) but our `notify_user` system is non-blocking,
+        # we safely invoke it using `async_to_sync` wrappers.
+        try:
+            # A) Notify the RECRUITER who listed the job
+            async_to_sync(notify_user)(
+                recipient=job.recruiter,
+                title="New Application Received! 📄",
+                message=f"A candidate has applied for your listing '{job.title}'.",
+                notification_type="application",
+                data={
+                    "job_id": str(job.job_id),
+                    "application_id": str(application.id) if hasattr(application, 'id') else None
+                }
+            )
+
+            # B) Notify the JOB SEEKER confirming their submission
+            async_to_sync(notify_user)(
+                recipient=request.user,
+                title="Application Submitted 🟢",
+                message=f"Your application for '{job.title}' was submitted successfully!",
+                notification_type="system",
+                data={
+                    "job_id": str(job.job_id)
+                }
+            )
+            logger.info(f"[Application Notifications] Successfully dispatched real-time alerts for job_id={job_id}")
+
+        except Exception as notify_err:
+            # We catch this in a separate block so if a notification fails, 
+            # it doesn't crash or rollback the user's actual job application transaction!
+            logger.error(f"[Application Notifications Failure] Non-fatal delivery disruption: {str(notify_err)}")
+
         return Response(
             {"message": "Your application was submitted successfully!"}, 
             status=status.HTTP_201_CREATED
