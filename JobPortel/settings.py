@@ -76,7 +76,6 @@ INSTALLED_APPS = [
     'dashboard',
     'notification',
     'ApplingForJobs',
-    'subscriptions',
 ]
 
 MIDDLEWARE = [
