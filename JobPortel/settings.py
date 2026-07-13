@@ -214,8 +214,8 @@ AUTHENTICATION_BACKENDS = [
 
 
 # Keep your existing limits
-AXES_FAILURE_LIMIT = 3
-AXES_COOLOFF_TIME = timedelta(minutes=15)
+AXES_FAILURE_LIMIT = 10
+AXES_COOLOFF_TIME = timedelta(minutes=1)
 
 # ADD THESE INSTEAD:
 AXES_RAISE_PERMISSION_DENIED = True   # Forces an exception your code can catch

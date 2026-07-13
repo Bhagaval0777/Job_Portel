@@ -264,12 +264,12 @@
         Your account has been verified and created successfully.
 You can now sign in.
       </div>
-      <a href="/users/login-test/" style="display:inline-block;padding:10px 28px;background:#185FA5;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500">Go to Login</a>
+      <a href="/users/login/" style="display:inline-block;padding:10px 28px;background:#185FA5;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500">Go to Login</a>
     </div>
   </div>
 
   <p class="footer-text" id="footer-link">
-    Already have an account? <a href="/users/login-test/">Sign in</a>
+    Already have an account? <a href="/users/login/">Sign in</a>
   </p>
 </div>
 
@@ -446,7 +446,7 @@ You can now sign in.
     document.getElementById(txtId).textContent = label;
   }
 
-  // STEP 1: POST to /api/v1/auth/register-test/ — matches UserRegistration view
+  // STEP 1: POST to /api/v1/auth/register/ — matches UserRegistration view
   document.getElementById('btn-register').addEventListener('click', async () => {
     clearAlert();
     if (!validateRegister()) return;

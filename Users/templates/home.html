@@ -58,7 +58,7 @@
                     console.error("Logout request error details:", err);
                 } finally {
                     window.accessToken = null;
-                    window.location.href = '/users/login-test/';
+                    window.location.href = '/users/login/';
                 }
             };
 
@@ -67,7 +67,7 @@
             container.innerHTML = `
                 <p style="color: #991b1b;">Authentication failed or session expired. Redirecting to login...</p>
             `;
-            setTimeout(() => { window.location.href = '/users/login-test/'; }, 1500);
+            setTimeout(() => { window.location.href = '/users/login/'; }, 1500);
         }
     }
 

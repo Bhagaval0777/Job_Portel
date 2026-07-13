@@ -225,7 +225,7 @@
             <span class="navbar-user-role" id="nav-user-role"></span>
           </div>
 
-          <a href="/users/login-test/" class="btn-nav-auth" id="nav-auth-btn">Sign In</a>
+          <a href="/users/login/" class="btn-nav-auth" id="nav-auth-btn">Sign In</a>
           
           <button class="navbar-toggle" id="navbarToggle" aria-label="Toggle navigation">
             <span></span>
@@ -296,7 +296,7 @@
 
       // 3. PERSISTENCE LIFECYCLE ENGINE
       window.authCheckPromise = (async () => {
-          if (window.location.pathname === '/users/login-test/') return;
+          if (window.location.pathname === '/users/login/') return;
 
           try {
               const response = await window.authFetch('/users/details/');
@@ -309,8 +309,8 @@
                   window.accessToken = null;
                   window.userRole = null;
                   window.userEmail = null;
-                  if (window.location.pathname !== '/users/login-test/') {
-                      window.location.href = '/users/login-test/';
+                  if (window.location.pathname !== '/users/login/') {
+                      window.location.href = '/users/login/';
                   }
               }
           } catch (err) {
