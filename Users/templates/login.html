@@ -135,7 +135,7 @@
                 localStorage.setItem('user_email', email);
 
                 // 2. Relocate to main interface
-                window.location.href = '/users/login/';
+                window.location.href = '/users/dashboard/';
             } else {
                 errorBox.innerText = data.detail || 'Login failed. Please check your credentials.';
                 errorBox.style.display = 'block';

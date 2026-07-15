@@ -14,5 +14,6 @@ urlpatterns = [
 
      # 2. This is the API endpoint your JavaScript calls
     path('login/', views.login_page, name='login'),
+    path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
     path('details/', views.UserDetailsView.as_view(), name='details'),
 ]

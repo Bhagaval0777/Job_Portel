@@ -34,7 +34,7 @@ def register_page(request):
 #     permission_classes = [AllowAny] 
 
 def login_page(request):
-    return render(request, "home.html")
+    return render(request, "login.html")
 
 @method_decorator(ratelimit(key='ip', rate='5/m', block=True), name='post')
 class UserRegistration(APIView):
@@ -277,6 +277,13 @@ class LoginView(APIView):
                 "detail": "Too many attempts. Your account is now locked for 15 minutes."
             }, status=status.HTTP_403_FORBIDDEN)
 
+class DashboardView(APIView):
+    authentication_classes = [CustomJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Render the dashboard template for authenticated users
+        return render(request, "home.html")
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
