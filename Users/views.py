@@ -30,6 +30,11 @@ logger = logging.getLogger('users')
 def register_page(request):
     return render(request, "register.html")
 
+# class HomeTemplateView(APIView):
+#     permission_classes = [AllowAny] 
+
+def login_page(request):
+    return render(request, "home.html")
 
 @method_decorator(ratelimit(key='ip', rate='5/m', block=True), name='post')
 class UserRegistration(APIView):
@@ -226,8 +231,8 @@ class ResendOTP(APIView):
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request):
-        return render(request, 'login.html')
+    # def get(self, request):
+    #     return render(request, 'login.html')
 
     def post(self, request, *args, **kwargs):
         if AxesProxyHandler.is_locked(request):
@@ -299,12 +304,7 @@ class LogoutView(APIView):
         except Exception as e:
             logger.error(f"Logout error: {str(e)}")
             return Response({"detail": "Internal server error"}, status=500)
-  
-class HomeTemplateView(APIView):
-    permission_classes = [AllowAny] 
 
-    def get(self, request):
-        return render(request, 'home.html')
 
 # 2. THE DATA VIEW (Provides the JSON)
 class UserDetailsView(APIView):
